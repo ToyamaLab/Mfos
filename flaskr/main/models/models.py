@@ -25,3 +25,9 @@ class Employees(db.Model):
 
     def __str__(self):
         return f"id = {self.id}, name={self.name}, department={self.department}, create_at={self.create_at}, update_at={self.update_at}"
+
+    @classmethod
+    def select_employees(cls):
+        return cls.query.with_entities(
+            cls.id, cls.name, cls.department
+        ).all()
