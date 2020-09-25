@@ -13,8 +13,8 @@ def create_app():
 
     # Blueprint
     from flaskr.main.views import main_bp
-    from flaskr.api.v1.api import api_v1_bp
+    from flaskr.api.v1.slack.api import api_v1_slack_bp
     app.register_blueprint(main_bp)
-    app.register_blueprint(api_v1_bp)
+    app.register_blueprint(api_v1_slack_bp)
 
     return app

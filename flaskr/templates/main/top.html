@@ -6,11 +6,11 @@
     <h1>トップメニューです</h1>
     <h2>従業員一覧</h2>
     <table>
-            {% for employee in employees %}
+            {% for user in users %}
                 <tr>
-                    <td>{{ employee.id }}
-                    <td>{{ employee.name }}</td>
-                    <td>{{ employee.department }}</td>
+                    <td>{{ user.id }}
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.department }}</td>
                 </tr>
             {% endfor %}
         </table>

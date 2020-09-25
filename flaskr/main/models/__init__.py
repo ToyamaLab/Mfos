@@ -1,7 +1,6 @@
-from .models import Employees, Actions
+from .models import User
 
 
 __all__ = [
-    Employees,
-    Actions,
+    User,
 ]
