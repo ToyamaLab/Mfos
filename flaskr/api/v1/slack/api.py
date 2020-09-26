@@ -11,7 +11,8 @@ api_v1_slack_bp = Blueprint('apiv1_slack', __name__, url_prefix='/api/v1/slack')
 
 @api_v1_slack_bp.route('/message', methods=['POST'])
 def get_slack_message():
-    message_data = json.loads(request.get_data().decode(encoding='utf-8'))
+    raw_data = request.get_data()
+    message_data = json.loads(raw_data.decode(encoding='utf-8'))
     db_conn = mydb.connect(
         host=os.getenv('DB_HOST', os.environ['DB_HOSTNAME']),
         user=os.getenv('DB_USER', os.environ['DB_USERNAME']),
