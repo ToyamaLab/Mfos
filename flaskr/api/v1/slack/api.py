@@ -51,5 +51,5 @@ def get_slack_message():
     # with db.session.begin(subtransactions=True):
     #     message.insert_message()
     # db.session.commit()
-    response = message_data
+    response = raw_data
     return response
