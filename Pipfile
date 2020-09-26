@@ -12,6 +12,7 @@ flask-migrate = "*"
 pymysql = "*"
 cryptography = "*"
 mysql-connector-python = "*"
+gunicorn = "*"
 
 [requires]
 python_version = "3.8"
