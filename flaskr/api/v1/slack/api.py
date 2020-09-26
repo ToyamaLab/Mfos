@@ -12,6 +12,7 @@ api_v1_slack_bp = Blueprint('apiv1_slack', __name__, url_prefix='/api/v1/slack')
 def get_slack_message():
     message_data = json.loads(request.get_data().decode(encoding='utf-8'))
     db_conn = mydb.connect(
+        host=os.getenv('DB_HOST', os.environ['DB_HOSTNAME']),
         user=os.getenv('DB_USER', os.environ['DB_USERNAME']),
         password=os.getenv('DB_PASSWORD', os.environ['DB_PASSWORD']),
         database=os.getenv('DB_NAME', os.environ['DB_NAME']),
