@@ -22,10 +22,14 @@ def top_menu():
 def get_slack_message():
     user_data = json.loads(request.get_data().decode(encoding='utf-8'))
     db_conn = mydb.connect(
-        user='root',
-        password='password',
-        database='mfos-db',
+        user=os.getenv('DB_USER', os.environ['DB_USERNAME']),
+        password=os.getenv('DB_PASSWORD', os.environ['DB_PASSWORD']),
+        database=os.getenv('DB_NAME', os.environ['DB_NAME']),
         port=3306
+        # user='root',
+        # password='password',
+        # database='mfos-db',
+        # port=3306
     )
     db_cur = db_conn.cursor()
 
