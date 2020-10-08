@@ -26,8 +26,10 @@ def get_slack_message():
     )
     db_cur = db_conn.cursor()
 
-    db_cur.execute("INSERT INTO messages(team_id, event_id, event_type, user_id, event_time, message_time, channel, text, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                   (message_data['team_id'], message_data['event_id'], message_data['event']['type'], message_data['event']['user'], message_data['event_time'], message_data['event']['event_ts'], message_data['event']['channel'], message_data['event']['text'], datetime.now(), datetime.now()))
+    if message_data['team_id']:
+        db_cur.execute("INSERT INTO messages(team_id, event_id, event_type, user_id, event_time, message_time, channel, text, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (message_data['team_id'], message_data['event_id'], message_data['event']['type'], message_data['event']['user'], message_data['event_time'], message_data['event']['event_ts'], message_data['event']['channel'], message_data['event']['text'], datetime.now(), datetime.now()))
+
     db_cur.close()
     db_conn.commit()
     db_conn.close()
@@ -52,4 +54,5 @@ def get_slack_message():
     #     message.insert_message()
     # db.session.commit()
     response = raw_data
+    print(response)
     return response
