@@ -13,6 +13,9 @@ pymysql = "*"
 cryptography = "*"
 mysql-connector-python = "*"
 gunicorn = "*"
+oauth2client = "*"
+apiclient = "*"
+google-api-python-client = "*"
 
 [requires]
 python_version = "3.8"

@@ -3,6 +3,7 @@ import os
 import mysql.connector as mydb
 from datetime import datetime
 from flask import Blueprint, request, abort, jsonify
+from flaskr.database import connect_db
 from flaskr.database import db
 from flaskr.api.v1.slack.models import Message
 
@@ -13,17 +14,7 @@ api_v1_slack_bp = Blueprint('apiv1_slack', __name__, url_prefix='/api/v1/slack')
 def get_slack_message():
     raw_data = request.get_data()
     message_data = json.loads(raw_data.decode(encoding='utf-8'))
-    db_conn = mydb.connect(
-        host=os.getenv('DB_HOST', os.environ['DB_HOSTNAME']),
-        user=os.getenv('DB_USER', os.environ['DB_USERNAME']),
-        password=os.getenv('DB_PASSWORD', os.environ['DB_PASSWORD']),
-        database=os.getenv('DB_NAME', os.environ['DB_NAME']),
-        port=3306
-        # user='root',
-        # password='password',
-        # database='mfos-db',
-        # port=3306
-    )
+    db_conn = connect_db()
     db_cur = db_conn.cursor()
 
     try:

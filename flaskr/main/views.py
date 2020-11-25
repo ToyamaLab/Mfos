@@ -3,6 +3,7 @@ import os
 import mysql.connector as mydb
 from flask import Blueprint, render_template, request
 from datetime import datetime
+from flaskr.database import connect_db
 from flaskr.main.models import (
     User
 )
@@ -22,17 +23,7 @@ def top_menu():
 @main_bp.route('/user/post', methods=['POST'])
 def get_slack_message():
     user_data = json.loads(request.get_data().decode(encoding='utf-8'))
-    db_conn = mydb.connect(
-        host=os.getenv('DB_HOST', os.environ['DB_HOSTNAME']),
-        user=os.getenv('DB_USER', os.environ['DB_USERNAME']),
-        password=os.getenv('DB_PASSWORD', os.environ['DB_PASSWORD']),
-        database=os.getenv('DB_NAME', os.environ['DB_NAME']),
-        port=3306
-        # user='root',
-        # password='password',
-        # database='mfos-db',
-        # port=3306
-    )
+    db_conn = connect_db()
     db_cur = db_conn.cursor()
 
     db_cur.execute("INSERT INTO users(name, slack_id, created_at, updated_at) VALUES(%s, %s, %s, %s)", (user_data['name'], user_data['slack_id'], datetime.now(), datetime.now()))
