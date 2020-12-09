@@ -4,13 +4,13 @@ from flaskr.database import db
 
 
 class Information(db.Model):
-    __tablename__ = 'e_information'
+    __tablename__ = 'information'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
     department = db.Column(db.String(30), index=True, nullable=False)
-    age = db.Column(db.Inteher, nullable=False)
+    age = db.Column(db.Integer, nullable=False)
     sex = db.Column(db.String(5), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)

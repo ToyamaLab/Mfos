@@ -15,8 +15,10 @@ def create_app():
     from flaskr.main.views import main_bp
     from flaskr.api.v1.slack.api import api_v1_slack_bp
     from flaskr.api.v1.member.api import api_v1_member_bp
+    from flaskr.api.v1.calendar.api import api_v1_calendar_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(api_v1_slack_bp)
     app.register_blueprint(api_v1_member_bp)
+    app.register_blueprint(api_v1_calendar_bp)
 
     return app

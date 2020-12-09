@@ -7,16 +7,18 @@ from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 from flaskr.database import connect_db
 from flaskr.database import db
-from flaskr.api.v1.slack.models import Message
+from flaskr.api.v1.member.models import Information
 
 api_v1_member_bp = Blueprint('apiv1_member', __name__, url_prefix='/api/v1/member')
-KEY_FILE_LOCATION= 'elated-practice-284214-78b12404462f.json'
-SCOPES_SPREADSHEETS = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-SEARCH_SHEET_ID='16a8Xq-lL6VVIQ_WToQZIntFfa3b5tmOIB91cY75N-YY'
+KEY_FILE_LOCATION = 'credentials.json'
+SCOPES_SPREADSHEETS = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+SEARCH_SHEET_ID = '16a8Xq-lL6VVIQ_WToQZIntFfa3b5tmOIB91cY75N-YY'
+
 
 def initialize_spreadSheets():
     credentials = ServiceAccountCredentials.from_json_keyfile_name(KEY_FILE_LOCATION, SCOPES_SPREADSHEETS)
     return build('sheets', 'v4', credentials=credentials)
+
 
 @api_v1_member_bp.route('/member/regist', methods=['POST'])
 def regist_member_information():
@@ -27,7 +29,8 @@ def regist_member_information():
 
     try:
         db_cur.execute("INSERT INTO messages(department, sex, age, created_at, updated_at) VALUES(%s, %s, %s, %s, %s)",
-                    (message_data['department'], message_data['sex'], message_data['age'], datetime.now(), datetime.now()))
+                       (message_data['department'], message_data['sex'], message_data['age'], datetime.now(),
+                        datetime.now()))
         response = raw_data
     except KeyError:
         response = raw_data
