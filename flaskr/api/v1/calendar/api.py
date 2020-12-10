@@ -4,6 +4,7 @@ from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 from flaskr.database import connect_db
 from datetime import datetime as dt
+from flaskr.api.v1.calendar.models import Calendar
 
 api_v1_calendar_bp = Blueprint('apiv1_calendar', __name__, url_prefix='/api/v1/calendar')
 KEY_FILE_LOCATION = 'credentials.json'
