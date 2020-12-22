@@ -72,7 +72,8 @@ def get_meetings():
         meeting['start_time'] = meeting['start_time'].replace('T', ' ').replace('Z', '')
         meeting['created_at'] = meeting['created_at'].replace('T', ' ').replace('Z', '')
         new_meeting_uuids.append(meeting['uuid'])
-        try:
+        # try:
+        if 1 == 1:
             user_id = User.check_user_mail(accounts['zoom_user_id'])[0]
             print(user_id)
             ZoomMeeting.insert_schedule(user_id, meeting)
@@ -84,8 +85,8 @@ def get_meetings():
             result['start_time'] = meeting['start_time']
             result['duration'] = meeting['duration']
             results_meeting.append(result)
-        except Exception:
-            print('Error')
+        # except Exception:
+        #     print('Error')
 
     # db_cur.close()
 
