@@ -20,7 +20,7 @@ def connect_db():
             database='mfos-db',
             port=3306
         )
-        
+
     else:
         db_conn = mydb.connect(
             host=os.getenv(os.environ['DB_HOSTNAME']),
@@ -29,6 +29,7 @@ def connect_db():
             database=os.getenv(os.environ['DB_NAME']),
             port=3306
         )
+        print("success")
         # db_conn = mydb.connect(
         #     host=os.getenv('DB_HOST', os.environ['DB_HOSTNAME']),
         #     user=os.getenv('DB_USER', os.environ['DB_USERNAME']),
