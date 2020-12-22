@@ -2,7 +2,6 @@ import json
 from flask import Blueprint, request
 import datetime
 from apiclient.discovery import build
-from oauth2client.service_account import ServiceAccountCredentials
 from flaskr.api.v1.account_management import google_account_management
 from flaskr.database import connect_db
 from flaskr.api.v1.member import (
@@ -19,7 +18,7 @@ google_credentials = google_account_management(SCOPES_SPREADSHEETS)
 
 def initialize_spreadSheets():
     credentials = google_credentials
-    return build('sheets', 'v4', credentials=credentials)
+    return build('sheets', 'v4', credentials=credentials, cache_discovery=False)
 
 
 @api_v1_member_bp.route('/member/regist', methods=['POST'])

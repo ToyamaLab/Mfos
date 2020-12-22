@@ -17,7 +17,7 @@ google_credentials = google_account_management(GOOGLE_CALENDAR_SCOPES)
 
 def initialize_calendar():
     credentials = google_credentials
-    return build('calendar', 'v3', credentials=credentials)
+    return build('calendar', 'v3', credentials=credentials, cache_discovery=False)
 
 
 @api_v1_calendar_bp.route('/get', methods=['GET'])
