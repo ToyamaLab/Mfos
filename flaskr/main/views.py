@@ -61,8 +61,13 @@ def user_detail():
     schedule = Calendar.select_schedule_id(user_id)
     slack_channel = db.session.query(SlackChannelMember, SlackChannel).join(SlackChannel, SlackChannelMember.channel_id == SlackChannel.id).with_entities(
         SlackChannelMember.user_id, SlackChannelMember.channel_id, SlackChannel.name).filter(SlackMessage.user_id==user_id).all()
+    db.session.commit()
+    db.session.close()
     slack_message = db.session.query(SlackMessage, SlackChannel).join(SlackChannel, SlackMessage.channel_id == SlackChannel.id).with_entities(
         SlackMessage.id, SlackMessage.event_id, SlackMessage.event_type, SlackMessage.event_time, SlackMessage.message_time, SlackMessage.file_id, SlackMessage.text, SlackMessage.reaction, SlackChannel.name).filter(SlackMessage.user_id==user_id).all()
+    print(slack_message)
+    db.session.commit()
+    db.session.close()
     zoom_meeting = ZoomMeeting.select_meeting(user_id)
     # print(user)
     # print(information)
