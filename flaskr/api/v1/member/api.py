@@ -3,6 +3,7 @@ from flask import Blueprint, request
 import datetime
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
+from flaskr.api.v1.account_management import google_account_management
 from flaskr.database import connect_db
 from flaskr.api.v1.member import (
     User,
@@ -10,13 +11,14 @@ from flaskr.api.v1.member import (
 )
 
 api_v1_member_bp = Blueprint('apiv1_member', __name__, url_prefix='/api/v1/member')
-KEY_FILE_LOCATION = 'credentials.json'
 SCOPES_SPREADSHEETS = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 SEARCH_SHEET_ID = '16a8Xq-lL6VVIQ_WToQZIntFfa3b5tmOIB91cY75N-YY'
+google_credentials = google_account_management(SCOPES_SPREADSHEETS)
+
 
 
 def initialize_spreadSheets():
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(KEY_FILE_LOCATION, SCOPES_SPREADSHEETS)
+    credentials = google_credentials
     return build('sheets', 'v4', credentials=credentials)
 
 

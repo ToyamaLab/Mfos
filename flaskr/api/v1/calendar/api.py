@@ -2,6 +2,7 @@ import datetime
 from flask import Blueprint
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
+from flaskr.api.v1.account_management import google_account_management
 from flaskr.api.v1.calendar import (
     User,
     Calendar,
@@ -11,10 +12,11 @@ api_v1_calendar_bp = Blueprint('apiv1_calendar', __name__, url_prefix='/api/v1/c
 KEY_FILE_LOCATION = 'credentials.json'
 GOOGLE_CALENDAR_ID = 'kazu.agestock@gmail.com'
 GOOGLE_CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+google_credentials = google_account_management(GOOGLE_CALENDAR_SCOPES)
 
 
 def initialize_calendar():
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(KEY_FILE_LOCATION, GOOGLE_CALENDAR_SCOPES)
+    credentials = google_credentials
     return build('calendar', 'v3', credentials=credentials)
 
 
