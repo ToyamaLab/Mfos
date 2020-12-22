@@ -587,7 +587,7 @@ class ZoomMeeting(db.Model):
 
     @classmethod
     def insert_schedule(cls, user_id, meeting):
-        target = SlackMessage(user_id=user_id, meeting_id=meeting['id'],
+        target = ZoomMeeting(user_id=user_id, meeting_id=meeting['id'],
                               meeting_uuid=meeting['uuid'], topic=meeting['topic'],
                               start_time=meeting['start_time'], duration=meeting['duration'],
                               meeting_created=meeting['created_at'], created_at=datetime.now(), updated_at=datetime.now())
