@@ -571,14 +571,14 @@ class ZoomMeeting(db.Model):
     # zoom_meeting = db.relationship('ZoomMessage', backref='meeting', lazy=True)
     # zoom_recording = db.relationship('ZoomRecording', backref='meeting', lazy=True)
 
-    def __init__(self, user_id, meeting_id, meeting_uuid, topic, start_time, duration, meetiong_created, created_at, updated_at):
+    def __init__(self, user_id, meeting_id, meeting_uuid, topic, start_time, duration, meeting_created, created_at, updated_at):
         self.user_id = user_id
         self.meeting_id = meeting_id
         self.meeting_uuid = meeting_uuid
         self.topic = topic
         self.start_time = start_time
         self.duration = duration
-        self.meeting_created = meetiong_created
+        self.meeting_created = meeting_created
         self.created_at = created_at
         self.updated_at = updated_at
 
