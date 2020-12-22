@@ -1,11 +1,11 @@
 import json
-import os
-import mysql.connector as mydb
-from datetime import datetime
-from flask import Blueprint, request, abort, jsonify
-from flaskr.database import connect_db
-from flaskr.database import db
-from flaskr.api.v1.slack.models import Message
+from flask import Blueprint, request
+from flaskr.api.v1.slack import (
+    User,
+    SlackChannel,
+    SlackChannelMember,
+    SlackMessage,
+)
 
 api_v1_slack_bp = Blueprint('apiv1_slack', __name__, url_prefix='/api/v1/slack')
 
@@ -14,21 +14,49 @@ api_v1_slack_bp = Blueprint('apiv1_slack', __name__, url_prefix='/api/v1/slack')
 def get_slack_message():
     raw_data = request.get_data()
     message_data = json.loads(raw_data.decode(encoding='utf-8'))
-    db_conn = connect_db()
-    db_cur = db_conn.cursor()
+    print(message_data)
 
     try:
-        db_cur.execute("INSERT INTO messages(team_id, event_id, event_type, user_id, event_time, message_time, channel, text, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    (message_data['team_id'], message_data['event_id'], message_data['event']['type'], message_data['event']['user'], message_data['event_time'], message_data['event']['event_ts'], message_data['event']['channel'], message_data['event']['text'], datetime.now(), datetime.now()))
-        response = raw_data
-    except KeyError:
-        response = raw_data
+        if message_data['event']['type'] == 'channel_created':
+            user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
+            SlackChannel.insert_channel(message_data['event']['channel']['id'], message_data['event']['channel']['name'])
+            channel_id = SlackChannel.select_channel_id(message_data['event']['channel']['id'])[0]
+            result = SlackMessage.insert_message_channel(user_id, channel_id, message_data)
+        elif message_data['event']['type'] == 'channel_rename':
+            user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
+            channel_id = SlackChannel.select_channel_id(message_data['event']['channel']['id'])[0]
+            SlackChannel.update_channel_name(message_data['event']['channel']['id'], message_data['event']['channel']['name'])
+            result = SlackMessage.insert_message_channel(user_id, channel_id, message_data)
+        elif message_data['event']['type'] == ('file_created' or 'file_shared' or 'file_deleted' or 'file_unshared' or 'file_change' or 'file_public'):
+            user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
+            result = SlackMessage.insert_message_file(user_id, message_data)
+        elif message_data['event']['type'] == ('reaction_added' or 'reaction_removed'):
+            user_id = User.check_user_slack_id(message_data['event']['item_user'])[0]
+            channel_id = SlackChannel.select_channel_id(message_data['event']['item']['channel'])[0]
+            result = SlackMessage.insert_message_reaction(user_id, channel_id, message_data)
+        elif message_data['event']['type'] == 'message':
+            user_id = User.check_user_slack_id(message_data['event']['user'])[0]
+            channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
+            result = SlackMessage.insert_message(user_id, channel_id ,message_data)
+        elif message_data['event']['type'] == 'member_joined_channel':
+            user_id = User.check_user_slack_id(message_data['event']['user'])[0]
+            channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
+            result = SlackMessage.insert_message_join(user_id, channel_id, message_data)
 
+        try:
+            SlackChannelMember.insert_channel_member(user_id, channel_id)
+        except Exception:
+            print('non member regist')
 
-    db_cur.close()
-    db_conn.commit()
-    db_conn.close()
-
+        response ={
+            'status': 200,
+            'data': result
+        }
+    except Exception as e:
+        response = {
+            'status': 'error',
+            'error': e
+        }
 
     # message = Message(
     #     team_id=message_data['team_id'],

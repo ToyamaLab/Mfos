@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}
+    ユーザー詳細
+{% endblock %}
+{% block content %}
+    <a href="{{url_for('main.top_menu')}}">トップメニュー</a>
+    <h1>従業員情報</h1>
+    <div>
+        <span><a href="#1">スケジュール</a></span>
+        <span><a href="#2">メール</a></span>
+        <span><a href="#3">SLACK CHANEL</a></span>
+        <span><a href="#4">SLACK MESSAGE</a></span>
+        <span><a href="#5">ZOOMミーティング</a></span>
+    </div>
+    <h3>NO.{{ user.id }}
+    <h2>{{ information.name }}</h2>
+    <table border="1">
+        <tr>
+            <th>部署</th>
+            <th>{{ information.department }}</th>
+        </tr>
+        <tr>
+            <th>生年月日</th>
+            <th>{{ information.birthday }}</th>
+        </tr>
+        <tr>
+            <th>性別</th>
+            <th>{{ information.sex }}</th>
+        </tr>
+        <tr>
+            <th>メールアドレス</th>
+            <th>{{ user.gmail }}</th>
+        </tr>
+        <tr>
+            <th>SLACK_ID</th>
+            <th>{{ user.slack_id }}</th>
+        </tr>
+    </table>
+
+    <br>
+
+    <h3 id="1">スケジュール</h3>
+    <table border="1">
+        <tr>
+            <th>日時</th>
+            <th>タイトル</th>
+            <th>場所</th>
+            <th>詳細</th>
+            <th>リンク</th>
+            <th>イベントID</th>
+            <th>作成者</th>
+            <th>作成日時</th>
+            <th>更新日時</th>
+        </tr>
+        {% for s in schedule %}
+            <tr>
+                <th>{{ s.date }}</th>
+                <th>{{ s.title }}</th>
+                <th>{{ s.location }}</th>
+                <th>{{ s.description }}</th>
+                <th>{{ s.link }}</th>
+                <th>{{ s.event_id }}</th>
+                <th>{{ s.creator }}</th>
+                <th>{{ s.event_created }}</th>
+                <th>{{ s.event_updated }}</th>
+            </tr>
+        {%  endfor %}
+    </table>
+
+    <br>
+    <h3 id="2">メール</h3>
+    <table border="1">
+        <tr>
+            <th>日時</th>
+            <th>タイトル</th>
+            <th>送信者</th>
+            <th>送信者アドレス</th>
+            <th>本文</th>
+        </tr>
+        {% for m in mail %}
+            <tr>
+                <th>{{ m.date }}</th>
+                <th>{{ m.subject }}</th>
+                <th>{{ m.sender_name }}</th>
+                <th>{{ m.sender_email }}</th>
+                <th>{{ m.message }}</th>
+            </tr>
+        {%  endfor %}
+    </table>
+
+    <br>
+    <h3 id="3">SLACK CHANNEL</h3>
+    <table border="1">
+        <tr>
+            <th>CHANNEL_ID</th>
+            <th>名前</th>
+        </tr>
+        {% for c in slack_channel %}
+            <tr>
+                <th>{{ c.channel_id }}</th>
+                <th>{{ c.name }}</th>
+            </tr>
+        {%  endfor %}
+    </table>
+
+    <br>
+    <h3 id="4">SLACK MESSAGE</h3>
+    <table border="1">
+        <tr>
+            <th>日時</th>
+            <th>チャンネル</th>
+            <th>イベントID</th>
+            <th>種別</th>
+            <th>テキスト</th>
+            <th>リアクション</th>
+            <th>FILE_ID</th>
+        </tr>
+        {% for m in slack_message %}
+            <tr>
+                <th>{{ m.message_time }}</th>
+                <th>{{ m.name }}</th>
+                <th>{{ m.event_id }}</th>
+                <th>{{ m.event_type }}</th>
+                <th>{{ m.text }}</th>
+                <th>{{ m.reaction }}</th>
+                <th>{{ m.file_id }}</th>
+            </tr>
+        {%  endfor %}
+    </table>
+
+    <br>
+    <h3 id="5">ZOOMミーティング</h3>
+    <table border="1">
+        <tr>
+            <th>日時</th>
+            <th>時間</th>
+            <th>タイトル</th>
+            <th>作成日時</th>
+        </tr>
+        {% for z in zoom_meeting %}
+            <tr>
+                <th>{{ z[2] }}</th>
+                <th>{{ z[3] }}</th>
+                <th>{{ z[1] }}</th>
+                <th>{{ z[4] }}</th>
+            </tr>
+        {%  endfor %}
+    </table>
+
+
+
+{#    <h2>従業員一覧</h2>#}
+{#    <table>#}
+{#        <tr>#}
+{#            <th>ID</th>#}
+{#            <th>NAME</th>#}
+{#            <th>DEPARTMENT</th>#}
+{#            <th>MAIL</th>#}
+{#            <th>SLACK_ID</th>#}
+{#        </tr>#}
+{#            {% for user in users %}#}
+{#                <tr>#}
+{#                    <td>{{ user['id'] }}</td>#}
+{#                    <td>{{ user['name'] }}</td>#}
+{#                    <td>{{ user['department'] }}</td>#}
+{#                    <td>{{ user['mail'] }}</td>#}
+{#                    <td>{{ user['slack_id'] }}</td>#}
+{#                    <td><a href="sample.html">詳細</a></td>#}
+{#                </tr>#}
+{#            {% endfor %}#}
+{#        </table>#}
+{% endblock %}

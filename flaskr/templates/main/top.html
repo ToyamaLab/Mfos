@@ -3,15 +3,44 @@
     トップ
 {% endblock %}
 {% block content %}
-    <h1>トップメニューです</h1>
-    <h2>従業員一覧</h2>
-    <table>
+    <h1>トップメニュー</h1>
+    <h3>目次</h3>
+    <div>
+        <span><a href="#1">従業員</a></span>
+        <span><a href="#2">プロジェクト</a></span>
+    </div>
+    <h3 id="1">従業員一覧</h3>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>NAME</th>
+            <th>DEPARTMENT</th>
+            <th>MAIL</th>
+            <th>SLACK_ID</th>
+        </tr>
             {% for user in users %}
                 <tr>
-                    <td>{{ user.id }}
-                    <td>{{ user.name }}</td>
-                    <td>{{ user.department }}</td>
+                    <td>{{ user['id'] }}</td>
+                    <td>{{ user['name'] }}</td>
+                    <td>{{ user['department'] }}</td>
+                    <td>{{ user['mail'] }}</td>
+                    <td>{{ user['slack_id'] }}</td>
+                    <td><button onclick="location.href='user?id={{ user['id'] }}'">詳細</button></td>
                 </tr>
             {% endfor %}
-        </table>
+    </table>
+    <h3 id="2">プロジェクト一覧</h3>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>NAME</th>
+        </tr>
+            {% for project in projects %}
+                <tr>
+                    <td>{{ project['id'] }}</td>
+                    <td>{{ project['name'] }}</td>
+                    <td><button onclick="location.href='project?name={{ project['name'] }}'">分析</button></td>
+                </tr>
+            {% endfor %}
+    </table>
 {% endblock %}
