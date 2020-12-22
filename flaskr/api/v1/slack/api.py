@@ -43,10 +43,10 @@ def get_slack_message():
             channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
             result = SlackMessage.insert_message_join(user_id, channel_id, message_data)
 
-        try:
-            SlackChannelMember.insert_channel_member(user_id, channel_id)
-        except Exception:
-            print('non member regist')
+        # try:
+        #     SlackChannelMember.insert_channel_member(user_id, channel_id)
+        # except Exception:
+        #     print('non member regist')
 
         response ={
             'status': 200,

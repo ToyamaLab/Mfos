@@ -374,7 +374,7 @@ class SlackChannelMember(db.Model):
     __tablename__ = 'slack_channel_members'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),
-        UniqueConstraint('user_id', 'channel_id'),
+        # UniqueConstraint('user_id', 'channel_id'),
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
