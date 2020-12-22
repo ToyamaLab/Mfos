@@ -586,10 +586,17 @@ class ZoomMeeting(db.Model):
         return f"id = {self.id}, user_id = {self.user_id}, meeting_id = {self.meeting_id}, meeting_uuid = {self.meeting_uuid}, topic = {self.topic}, start_time = {self.start_time}, duration = {self.duration}, meeting_created = {self.meeting_created}, create_at={self.created_at}, update_at={self.updated_at} "
 
     @classmethod
-    def insert_schedule(cls, db_cur, user_id, meeting):
-        db_cur.execute(
-            "INSERT INTO zoom_meetings(user_id, meeting_id, meeting_uuid, topic, start_time, duration, meeting_created, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            (user_id, meeting['id'], meeting['uuid'], meeting['topic'], meeting['start_time'], meeting['duration'], meeting['created_at'], datetime.now(), datetime.now()))
+    def insert_schedule(cls, user_id, meeting):
+        target = SlackMessage(user_id=user_id, meeting_id=meeting['id'],
+                              meeting_uuid=meeting['uuid'], topic=meeting['topic'],
+                              start_time=meeting['start_time'], duration=meeting['duration'],
+                              meeting_created=meeting['created_at'], created_at=datetime.now(), updated_at=datetime.now())
+        db.session.add(target)
+        db.session.commit()
+        return target
+        # db_cur.execute(
+        #     "INSERT INTO zoom_meetings(user_id, meeting_id, meeting_uuid, topic, start_time, duration, meeting_created, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        #     (user_id, meeting['id'], meeting['uuid'], meeting['topic'], meeting['start_time'], meeting['duration'], meeting['created_at'], datetime.now(), datetime.now()))
 
     @classmethod
     def check_meeting_uuid(cls, meeting_uuid):
