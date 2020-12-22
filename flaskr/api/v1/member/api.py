@@ -96,7 +96,6 @@ def regist_member_spreadsheet():
             information_data['birthday'] = targets[i][3]
             print(information_data)
             user_id = User.check_user_mail(information_data['mail'])[0]
-            print("kazukazu")
             information_id = Information.check_information_mail(user_id)
             print(information_data)
             if information_id is None:
