@@ -35,8 +35,11 @@ def get_slack_message():
             channel_id = SlackChannel.select_channel_id(message_data['event']['item']['channel'])[0]
             result = SlackMessage.insert_message_reaction(user_id, channel_id, message_data)
         elif message_data['event']['type'] == 'message':
+            print("1")
             user_id = User.check_user_slack_id(message_data['event']['user'])[0]
+            print("2")
             channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
+            print("3")
             result = SlackMessage.insert_message(user_id, channel_id ,message_data)
         elif message_data['event']['type'] == 'member_joined_channel':
             user_id = User.check_user_slack_id(message_data['event']['user'])[0]
