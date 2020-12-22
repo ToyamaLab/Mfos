@@ -29,8 +29,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.drop_index('access_token', table_name='zoom_access_token')
-    op.drop_index('refresh_token', table_name='zoom_access_token')
     op.drop_table('zoom_access_token')
     # ### end Alembic commands ###
 
