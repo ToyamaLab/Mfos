@@ -60,7 +60,7 @@ def user_detail():
     mail = Mail.select_mail(user_id)
     schedule = Calendar.select_schedule_id(user_id)
     slack_channel = db.session.query(SlackChannelMember, SlackChannel).join(SlackChannel, SlackChannelMember.channel_id == SlackChannel.id).with_entities(
-        SlackChannelMember.user_id, SlackChannelMember.channel_id, SlackChannel.name).filter(SlackMessage.user_id==user_id).all()
+        SlackChannelMember.user_id, SlackChannelMember.channel_id, SlackChannel.name).filter(SlackChannelMember.user_id==user_id).all()
     print(slack_channel)
     db.session.commit()
     db.session.close()
