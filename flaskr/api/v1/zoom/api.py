@@ -36,7 +36,7 @@ def refresh_token(user_id):
 
 @api_v1_zoom_bp.route('/get/meetings', methods=['GET'])
 def get_meetings():
-    results = []
+    results_meeting = []
     user_id = User.check_user_mail(accounts['zoom_user_id'])[0]
     conn = http.client.HTTPSConnection("api.zoom.us")
     try:
@@ -74,6 +74,7 @@ def get_meetings():
         new_meeting_uuids.append(meeting['uuid'])
         try:
             user_id = User.check_user_mail(accounts['zoom_user_id'])[0]
+            print(user_id)
             ZoomMeeting.insert_schedule(user_id, meeting)
             result = {}
             result['user_id'] = user_id
@@ -137,7 +138,7 @@ def get_meetings():
     # results.append(results_participant)
     response = {
         'status': 200,
-        'data': results
+        'data': results_meeting
     }
 
     return response
