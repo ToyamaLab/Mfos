@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}
+    プロジェクト詳細
+{% endblock %}
+{% block content %}
+    <a href="{{url_for('main.top_menu')}}">トップメニュー</a>
+    <h1>プロジェクト情報</h1>
+    <h2>{{ project_name }}</h2>
+
+     <table border="1">
+        <tr>
+            <th>従業員ID</th>
+            <th>名前</th>
+            <th>部署</th>
+            <th>プロジェクト関連のメール</th>
+            <th>プロジェクト関連のスケジュール</th>
+            <th>プロジェクト関連のスラックメッセージ</th>
+            <th>プロジェクト関連のズームミーティング</th>
+        </tr>
+        {% for a in analysis.user_id %}
+            <tr>
+                <th>{{ a }}</th>
+                <th>{{ analysis[a]['name'] }}</th>
+                <th>{{ analysis[a]['department'] }}</th>
+                <th>{{ analysis[a]['contribution_mail'] }}%({{ analysis[a]['mail_count'] }}件)</th>
+                <th>{{ analysis[a]['contribution_schedule'] }}%({{ analysis[a]['schedule_count'] }}件)</th>
+                <th>{{ analysis[a]['contribution_slack'] }}%({{ analysis[a]['slack_count'] }}件)</th>
+                <th>{{ analysis[a]['contribution_zoom'] }}%({{ analysis[a]['zoom_count'] }}件)</th>
+            </tr>
+        {% endfor %}
+
+    </table>
+
+{#    <h3>Gmail</h3>#}
+{#    <canvas id="myPieChart"></canvas>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>#}
+{#    <script>#}
+{#      var ctx = document.getElementById("myPieChart");#}
+{#      var names_str = "{{ names_str }}"#}
+{#      var names = names_str.split(',')#}
+{#      var datasets_mail = {{ data['gmail_data'] }}#}
+{#      var myPieChart = new Chart(ctx, {#}
+{#        type: 'pie',#}
+{#        data: {#}
+{#          labels: names,#}
+{#          datasets: [{#}
+              {#backgroundColor: [#}
+              {#    "#BB5179",#}
+              {#    "#FAFF67",#}
+              {#    "#58A27C",#}
+              {#    "#3C00FF"#}
+              {#],#}
+{#              data: datasets_mail#}
+{#          }]#}
+{#        },#}
+{#        options: {#}
+{#          title: {#}
+{#            display: true,#}
+{#            text: '関係しているGmailの数'#}
+{#          }#}
+{#        }#}
+{#      });#}
+{#    </script>#}
+{##}
+{#    <h3>Schedule</h3>#}
+{#    <canvas id="PieChart"></canvas>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>#}
+{#    <script>#}
+{#      var ctx = document.getElementById("myPieChart");#}
+{#      var names_str = "{{ names_str }}"#}
+{#      var names = names_str.split(',')#}
+{#      var datasets_schedule = {{ data['schedule_data'] }}#}
+{#      var myPieChart2 = new Chart(ctx, {#}
+{#        type: 'pie',#}
+{#        data: {#}
+{#          labels: names,#}
+{#          datasets: [{#}
+              {#backgroundColor: [#}
+              {#    "#BB5179",#}
+              {#    "#FAFF67",#}
+              {#    "#58A27C",#}
+              {#    "#3C00FF"#}
+              {#],#}
+{#              data: datasets_schedule#}
+{#          }]#}
+{#        },#}
+{#        options: {#}
+{#          title: {#}
+{#            display: true,#}
+{#            text: '関係しているGmailの数'#}
+{#          }#}
+{#        }#}
+{#      });#}
+{#    </script>#}
+
+
+
+{#    <table border="1">#}
+{#        <tr>#}
+{#            <th>ID</th>#}
+{#            <th>NAME</th>#}
+{#            <th>DEPARTMENT</th>#}
+{#            <th>MAIL</th>#}
+{#            <th>SLACK_ID</th>#}
+{#        </tr>#}
+{#            {% for user in users %}#}
+{#                <tr>#}
+{#                    <td>{{ user['id'] }}</td>#}
+{#                    <td>{{ user['name'] }}</td>#}
+{#                    <td>{{ user['department'] }}</td>#}
+{#                    <td>{{ user['mail'] }}</td>#}
+{#                    <td>{{ user['slack_id'] }}</td>#}
+{#                    <td><button onclick="location.href='user?id={{ user['id'] }}'">詳細</button></td>#}
+{#                </tr>#}
+{#            {% endfor %}#}
+{#    </table>#}
+{% endblock %}

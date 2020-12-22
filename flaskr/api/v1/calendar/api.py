@@ -2,9 +2,10 @@ import datetime
 from flask import Blueprint
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
-from flaskr.database import connect_db
-from datetime import datetime as dt
-from flaskr.api.v1.calendar.models import Calendar
+from flaskr.api.v1.calendar import (
+    User,
+    Calendar,
+)
 
 api_v1_calendar_bp = Blueprint('apiv1_calendar', __name__, url_prefix='/api/v1/calendar')
 KEY_FILE_LOCATION = 'credentials.json'
@@ -28,6 +29,7 @@ def get_calendar():
         orderBy='startTime'
     ).execute()
     events = events_result.get('items', [])
+    results = []
 
     if not events:
         print('No upcoming events found')
@@ -70,19 +72,20 @@ def get_calendar():
             event_data.append(date)
         events_data.append(event_data)
 
-    db_conn = connect_db()
-    db_cur = db_conn.cursor()
-
     for insert_data in events_data:
-        db_cur.execute("INSERT INTO schedule(event_id, link, title, description, location, event_created, event_updated, creator, all_day, start, end, date, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        (insert_data[0], insert_data[1], insert_data[2], insert_data[3], insert_data[4], insert_data[5], insert_data[6], insert_data[7], insert_data[8], insert_data[9], insert_data[10], insert_data[11], dt.now(), dt.now()))
+        try:
+            data = Calendar.check_schedule_event_id(insert_data[0])[0]
+        except Exception:
+            result = {}
+            user_id = User.check_user_mail(insert_data[7])[0]
+            Calendar.insert_schedule(user_id, insert_data)
+            result['user_id'] = user_id
+            result['data'] = insert_data
+            results.append(result)
 
     response = {
-        'status': 200
+        'status': 200,
+        'data': results
     }
-
-    db_cur.close()
-    db_conn.commit()
-    db_conn.close()
 
     return response

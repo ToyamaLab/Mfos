@@ -137,3 +137,6 @@ dmypy.json
 credentials.json
 credentials_gmail.json
 token.pickle
+
+# zoom api key
+account.py

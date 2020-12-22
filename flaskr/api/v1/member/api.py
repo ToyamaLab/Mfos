@@ -1,13 +1,13 @@
 import json
-import os
-import mysql.connector as mydb
-from datetime import datetime
-from flask import Blueprint, request, abort, jsonify
+from flask import Blueprint, request
+import datetime
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 from flaskr.database import connect_db
-from flaskr.database import db
-from flaskr.api.v1.member.models import Information
+from flaskr.api.v1.member import (
+    User,
+    Information,
+)
 
 api_v1_member_bp = Blueprint('apiv1_member', __name__, url_prefix='/api/v1/member')
 KEY_FILE_LOCATION = 'credentials.json'
@@ -23,17 +23,12 @@ def initialize_spreadSheets():
 @api_v1_member_bp.route('/member/regist', methods=['POST'])
 def regist_member_information():
     raw_data = request.get_data()
-    message_data = json.loads(raw_data.decode(encoding='utf-8'))
+    information_data = json.loads(raw_data.decode(encoding='utf-8'))
     db_conn = connect_db()
     db_cur = db_conn.cursor()
 
-    try:
-        db_cur.execute("INSERT INTO messages(department, sex, age, created_at, updated_at) VALUES(%s, %s, %s, %s, %s)",
-                       (message_data['department'], message_data['sex'], message_data['age'], datetime.now(),
-                        datetime.now()))
-        response = raw_data
-    except KeyError:
-        response = raw_data
+    user_id = User.check_user_mail(information_data['mail'])['user_id']
+    response = Information.insert_information(user_id, information_data)
 
     db_cur.close()
     db_conn.commit()
@@ -49,19 +44,8 @@ def update_member_information():
     db_conn = connect_db()
     db_cur = db_conn.cursor()
 
-    try:
-        if 'department' in information_data:
-            department = information_data['department']
-        if 'sex' in information_data:
-            sex = information_data['sex']
-        if 'age' in information_data:
-            age = information_data['age']
-
-        db_cur.execute("INSERT INTO messages(department, sex, updated_at) VALUES(%s, %s, %s)",
-                       (message_data['department'], message_data['sex'], datetime.now()))
-        response = raw_data
-    except KeyError:
-        response = raw_data
+    user_id = User.check_user_mail(information_data['mail'])['user_id']
+    response = Information.update_information(user_id, information_data)
 
     db_cur.close()
     db_conn.commit()
@@ -70,25 +54,66 @@ def update_member_information():
     return response
 
 
-@api_v1_member_bp.route('/sheet', methods=['GET'])
-def update_member_spreadsheet():
+@api_v1_member_bp.route('/sheet/member', methods=['GET'])
+def update_information_spreadsheet():
     sheet = initialize_spreadSheets()
-    search_query = sheet.spreadsheets().values().get(spreadsheetId=SEARCH_SHEET_ID, range="社員情報!A2:D2500").execute()
+    search_query = sheet.spreadsheets().values().get(spreadsheetId=SEARCH_SHEET_ID, range="社員情報!A2:E2500").execute()
     targets = search_query['values']
-    db_conn = connect_db()
-    db_cur = db_conn.cursor()
-    response = 'ok'
+    result = []
 
     for i in range(len(targets)):
         try:
-            db_cur.execute(
-                "INSERT INTO information(department, sex, age, created_at, update_at) VALUES(%s, %s, %s, %s, %s)",
-                (targets[i][1], targets[i][3], targets[i][2], datetime.now(), datetime.now()))
-        except KeyError:
-            response = 'error'
+            user_id = User.check_user_mail(targets[i][1])[0]
+            print(user_id)
+        except Exception:
+            print('insert gmail')
+            User.insert_gmail(targets[i][1])
+            result.append(targets[i][1])
 
-    db_cur.close()
-    db_conn.commit()
-    db_conn.close()
+    response = {
+        'status': 200,
+        'data': result
+    }
+
+    return response
+
+
+@api_v1_member_bp.route('/sheet/information', methods=['GET'])
+def regist_member_spreadsheet():
+    sheet = initialize_spreadSheets()
+    search_query = sheet.spreadsheets().values().get(spreadsheetId=SEARCH_SHEET_ID, range="社員情報!A2:E2500").execute()
+    targets = search_query['values']
+    result = []
+    try:
+        for i in range(len(targets)):
+            print(i)
+            information_data = {}
+            information_data['name'] = targets[i][0]
+            information_data['mail'] = targets[i][1]
+            information_data['department'] = targets[i][2]
+            information_data['sex'] = targets[i][4]
+            information_data['birthday'] = targets[i][3]
+            print(information_data)
+            user_id = User.check_user_mail(information_data['mail'])[0]
+            print("kazukazu")
+            information_id = Information.check_information_mail(user_id)
+            print(information_data)
+            if information_id is None:
+                print("answer")
+                Information.insert_information(user_id, information_data)
+            else:
+                Information.update_information(user_id, information_data)
+            result.append(information_data)
+
+        response = {
+            'status': 200,
+            'data': result
+        }
+
+    except Exception as e:
+        response = {
+            'Error': e,
+            'Hint': "Perhaps the member registration method should be done first."
+        }
 
     return response
