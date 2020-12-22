@@ -1,7 +1,7 @@
 import json
 from flask import Blueprint, request
 import datetime
-from apiclient.discovery import build
+from googleapiclient.discovery import build
 from flaskr.api.v1.account_management import google_account_management
 from flaskr.database import connect_db
 from flaskr.api.v1.member import (

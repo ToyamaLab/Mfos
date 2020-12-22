@@ -1,6 +1,6 @@
 import datetime
 from flask import Blueprint
-from apiclient.discovery import build
+from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 from flaskr.api.v1.account_management import google_account_management
 from flaskr.api.v1.calendar import (

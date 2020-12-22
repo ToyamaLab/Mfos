@@ -6,7 +6,7 @@ import email
 import base64
 import calendar
 from flask import Blueprint
-from apiclient.discovery import build
+from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from flaskr.api.v1.account_management import gmail_account_management
