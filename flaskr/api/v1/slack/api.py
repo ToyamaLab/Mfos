@@ -21,30 +21,27 @@ def get_slack_message():
             user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
             SlackChannel.insert_channel(message_data['event']['channel']['id'], message_data['event']['channel']['name'])
             channel_id = SlackChannel.select_channel_id(message_data['event']['channel']['id'])[0]
-            result = SlackMessage.insert_message_channel(user_id, channel_id, message_data)
+            SlackMessage.insert_message_channel(user_id, channel_id, message_data)
         elif message_data['event']['type'] == 'channel_rename':
             user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
             channel_id = SlackChannel.select_channel_id(message_data['event']['channel']['id'])[0]
             SlackChannel.update_channel_name(message_data['event']['channel']['id'], message_data['event']['channel']['name'])
-            result = SlackMessage.insert_message_channel(user_id, channel_id, message_data)
+            SlackMessage.insert_message_channel(user_id, channel_id, message_data)
         elif message_data['event']['type'] == ('file_created' or 'file_shared' or 'file_deleted' or 'file_unshared' or 'file_change' or 'file_public'):
             user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
-            result = SlackMessage.insert_message_file(user_id, message_data)
+            SlackMessage.insert_message_file(user_id, message_data)
         elif message_data['event']['type'] == ('reaction_added' or 'reaction_removed'):
             user_id = User.check_user_slack_id(message_data['event']['item_user'])[0]
             channel_id = SlackChannel.select_channel_id(message_data['event']['item']['channel'])[0]
-            result = SlackMessage.insert_message_reaction(user_id, channel_id, message_data)
+            SlackMessage.insert_message_reaction(user_id, channel_id, message_data)
         elif message_data['event']['type'] == 'message':
-            print("1")
             user_id = User.check_user_slack_id(message_data['event']['user'])[0]
-            print("2")
             channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
-            print("3")
-            result = SlackMessage.insert_message(user_id, channel_id ,message_data)
+            SlackMessage.insert_message(user_id, channel_id ,message_data)
         elif message_data['event']['type'] == 'member_joined_channel':
             user_id = User.check_user_slack_id(message_data['event']['user'])[0]
             channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
-            result = SlackMessage.insert_message_join(user_id, channel_id, message_data)
+            SlackMessage.insert_message_join(user_id, channel_id, message_data)
 
         # try:
         #     SlackChannelMember.insert_channel_member(user_id, channel_id)
@@ -53,7 +50,6 @@ def get_slack_message():
 
         response ={
             'status': 200,
-            'data': result
         }
     except Exception as e:
         response = {
