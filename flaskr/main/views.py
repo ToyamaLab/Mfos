@@ -27,6 +27,9 @@ def top_menu():
     # users = User.select_users()
     users_data = db.session.query(User, Information).join(Information, User.id == Information.user_id).with_entities(
         User.id, User.gmail, User.slack_id, Information.name, Information.department).all()
+    db.session.commit()
+    db.session.close()
+
     users = []
     for user_data in users_data:
         user = {}
