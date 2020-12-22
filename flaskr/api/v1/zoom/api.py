@@ -1,8 +1,9 @@
 import base64
+import os
 import json
 import http.client
-import account
 from flask import Blueprint
+from flaskr.api.v1.account_management import zoom_account_management
 from flaskr.api.v1.zoom import (
     User,
     ZoomAccessToken,
@@ -13,12 +14,13 @@ from flaskr.api.v1.zoom import (
 api_v1_zoom_bp = Blueprint('apiv1_zoom', __name__, url_prefix='/api/v1/zoom')
 conn = http.client.HTTPSConnection("api.zoom.us")
 conn_token = http.client.HTTPSConnection("zoom.us")
+accounts = zoom_account_management()
 
 
 def refresh_token(user_id):
     headers = {
         'host': 'zoom.us',
-        'authorization': 'Basic ' + base64.b64encode((account.client_id + ":" + account.client_secret).encode()).decode("ascii"),
+        'authorization': 'Basic ' + base64.b64encode((accounts['zoom_client_id'] + ":" + accounts['zoom_client_secret']).encode()).decode("ascii"),
 
     }
     refresh_token = ZoomAccessToken.get_refresh_token(user_id)[0].strip()
@@ -35,7 +37,7 @@ def refresh_token(user_id):
 @api_v1_zoom_bp.route('/get/meetings', methods=['GET'])
 def get_meetings():
     results = []
-    user_id = User.check_user_mail(account.userId)[0]
+    user_id = User.check_user_mail(accounts['zoom_user_id'])[0]
     conn = http.client.HTTPSConnection("api.zoom.us")
     try:
         headers = {
@@ -43,7 +45,7 @@ def get_meetings():
             'Authorization': "Bearer " + ZoomAccessToken.get_access_token(user_id)[0],
             'content-type': "application/json"
         }
-        conn.request("GET", "/v2/users/" + account.userId + "/meetings?page_size=100", headers=headers)
+        conn.request("GET", "/v2/users/" + accounts['zoom_user_id'] + "/meetings?page_size=100", headers=headers)
         res = conn.getresponse()
         data = res.read().decode("utf-8")
         data_json = json.loads(data)
@@ -56,7 +58,7 @@ def get_meetings():
             'Authorization': "Bearer " + ZoomAccessToken.get_access_token(user_id)[0],
             'content-type': "application/json"
         }
-        conn.request("GET", "/v2/users/" + account.userId + "/meetings?page_size=100", headers=headers_updated)
+        conn.request("GET", "/v2/users/" + accounts['zoom_user_id'] + "/meetings?page_size=100", headers=headers_updated)
         res = conn.getresponse()
         data = res.read().decode("utf-8")
         data_json = json.loads(data)
@@ -71,7 +73,7 @@ def get_meetings():
         meeting['created_at'] = meeting['created_at'].replace('T', ' ').replace('Z', '')
         new_meeting_uuids.append(meeting['uuid'])
         try:
-            user_id = User.check_user_mail(account.userId)[0]
+            user_id = User.check_user_mail(accounts['zoom_user_id'])[0]
             ZoomMeeting.insert_schedule(user_id, meeting)
             result = {}
             result['user_id'] = user_id

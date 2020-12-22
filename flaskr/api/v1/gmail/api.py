@@ -9,6 +9,7 @@ from flask import Blueprint
 from apiclient.discovery import build
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
+from flaskr.api.v1.account_management import gmail_account_management
 from datetime import datetime as dt
 from flaskr.api.v1.gmail import (
     User,
@@ -35,8 +36,7 @@ def initialize_gmail():
         if credentials and credentials.expired and credentials.refresh_token:
             credentials.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(KEY_FILE_LOCATION, GOOGLE_GMAIL_SCOPES)
-            credentials = flow.run_console()
+            credentials = gmail_account_management(GOOGLE_GMAIL_SCOPES)
         with open("token.pickle", "wb") as token:
             pickle.dump(credentials, token)
     return build('gmail', 'v1', credentials=credentials, cache_discovery=False)
