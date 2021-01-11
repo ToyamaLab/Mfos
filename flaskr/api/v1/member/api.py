@@ -33,17 +33,13 @@ def regist_member_information():
     response = {}
 
     try:
-        new_user_data = {}
-        new_user_data['gmail'] = information_data['gmail']
+        new_user_data = {'gmail': information_data['gmail']}
         if 'slack_id' in information_data:
             new_user_data['slack_id'] = information_data['slack_id']
         else:
             new_user_data['slack_id'] = None
-        new_information_data = {}
-        new_information_data['name'] = information_data['name']
-        new_information_data['department'] = information_data['department']
-        new_information_data['sex'] = information_data['sex']
-        new_information_data['birthday'] = information_data['birthday']
+        new_information_data = {'name': information_data['name'], 'department': information_data['department'],
+                                'sex': information_data['sex'], 'birthday': information_data['birthday']}
     except Exception:
         response = {
             'status': 'Error',
@@ -114,11 +110,8 @@ def update_member_information():
     information_id = Information.check_information_mail(user_id)
     if information_id is None:
         try:
-            new_information_data = {}
-            new_information_data['name'] = information_data['name']
-            new_information_data['department'] = information_data['department']
-            new_information_data['sex'] = information_data['sex']
-            new_information_data['birthday'] = information_data['birthday']
+            new_information_data = {'name': information_data['name'], 'department': information_data['department'],
+                                    'sex': information_data['sex'], 'birthday': information_data['birthday']}
         except Exception:
             response = {
                 'status': 'Error',
@@ -139,6 +132,14 @@ def regist_information_spreadsheet():
     """
             作成者: kazu
             概要: 従業員情報をGoogle Spread Sheetより抜き出し登録するメソッド
+            基本的な考え方:
+            スプレッドシートに記入された情報は
+            1, 既にデータベースに保存されており, 変更点もない.
+            2, 既にデータベースに保存されており, データの更新がある.
+            3, usersテーブル, informationテーブル双方に保存されていない.
+            4, usersテーブルに保存されているが, informationテーブルにデータが保存されていない.
+            5, スプレッドシートへの記入項目が不足している.
+            の五つに分類されるのでそれぞれに応じた処理を行っている.
     """
     sheet = initialize_spreadSheets()
     search_query = sheet.spreadsheets().values().get(spreadsheetId=SEARCH_SHEET_ID, range="社員情報!A2:E2500").execute()
@@ -147,15 +148,10 @@ def regist_information_spreadsheet():
     errors = []
 
     for i in range(len(targets)):
-        try:
-            user_data = {}
-            user_data['gmail'] = targets[i][1]
-            information_data = {}
-            information_data['name'] = targets[i][0]
-            information_data['mail'] = targets[i][1]
-            information_data['department'] = targets[i][2]
-            information_data['sex'] = targets[i][4]
-            information_data['birthday'] = targets[i][3]
+        try:  # Spread Sheetへの記入を処理している. 記入が適切でない場合はその行に記入されているデータに関しては以降の処理を行わず, Gmailを戻す.
+            user_data = {'gmail': targets[i][1]}
+            information_data = {'name': targets[i][0], 'mail': targets[i][1], 'department': targets[i][2],
+                                'sex': targets[i][4], 'birthday': targets[i][3]}
         except Exception:
             errors.append(targets[i][1])
             continue
@@ -174,9 +170,7 @@ def regist_information_spreadsheet():
             else:
                 Information.update_information(user_id, information_data)
 
-        result_data = {}
-        result_data['user_id'] = user_id
-        result_data['information_data'] = information_data
+        result_data = {'user_id': user_id, 'information_data': information_data}
         results.append(result_data)
 
     response = {
