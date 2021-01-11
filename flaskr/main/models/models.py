@@ -3,8 +3,11 @@ from flaskr.database import db
 from datetime import datetime
 
 
-# 従業員情報を格納したテーブル
 class User(db.Model):
+    """
+    作成者: kazu
+    概要: 従業員識別情報を保存しているテーブル
+    """
     __tablename__ = 'users'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
@@ -22,7 +25,6 @@ class User(db.Model):
     zoom_access_token = db.relationship('ZoomAccessToken', backref='user', lazy=True)
     zoom_meeting = db.relationship('ZoomMeeting', backref='user', lazy=True)
     zoom_participant = db.relationship('ZoomParticipant', backref='user', lazy=True)
-    # zoom_message = db.relationship('ZoomMessage', backref='user', lazy=True)
 
     def __init__(self, slack_id, gmail, created_at, updated_at):
         self.slack_id = slack_id
@@ -44,24 +46,42 @@ class User(db.Model):
 
     @classmethod
     def select_users_by_id(cls, user_id):
-        return db.session.query(cls).with_entities(cls.id, cls.slack_id, cls.gmail).filter(cls.id==user_id).first()
+        return db.session.query(cls).with_entities(cls.id, cls.slack_id, cls.gmail).filter(cls.id == user_id).first()
 
     @classmethod
-    def insert_user(self):
-        db.session.add(self)
+    def insert_user(self, data):
+        target = User(gmail=data['gmail'], slack_id=data['slack_id'], created_at=datetime.now(),
+                      updated_at=datetime.now())
+        db.session.add(target)
+        db.session.commit()
+
+    @classmethod
+    def insert_gmail(self, gmail):
+        target = User(gmail=gmail, slack_id=None, created_at=datetime.now(), updated_at=datetime.now())
+        db.session.add(target)
+        db.session.commit()
+
+    @classmethod
+    def update_user(cls, user_id, information_data):
+        user = db.session.query(cls).filter(cls.id == user_id).first()
+        if 'gmail' in information_data:
+            user.gmail = information_data['gmail']
+        if 'slack_id' in information_data:
+            user.slack_id = information_data['slack_id']
+        user.updated_at = datetime.now()
+        db.session.commit()
 
     @classmethod
     def check_user_mail(cls, gmail):
-        return db.session.query(cls).with_entities(cls.id).filter(cls.gmail==gmail).first()
+        return db.session.query(cls).with_entities(cls.id).filter(cls.gmail == gmail).first()
 
     @classmethod
     def check_user_slack_id(cls, slack_id):
         return db.session.query(cls).with_entities(cls.id).filter(cls.slack_id == slack_id).first()
 
     @classmethod
-    def insert_gmail(self, gmail):
-        target = User(gmail=gmail, slack_id=None, created_at=datetime.now(), updated_at=datetime.now())
-        db.session.add(target)
+    def delete_by_id(cls, user_id):
+        db.session.query(cls).filter(cls.id == user_id).delete()
         db.session.commit()
 
 
@@ -96,16 +116,20 @@ class Project(db.Model):
 
 
 class Information(db.Model):
+    """
+        作成者: kazu
+        概要: 従業員情報を保存しているテーブル
+    """
     __tablename__ = 'information'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    name = db.Column(db.String(20), index=True, nullable=False)
-    department = db.Column(db.String(30), index=True, nullable=False)
-    birthday = db.Column(db.DateTime, nullable=False)
-    sex = db.Column(db.String(5), nullable=False)
+    name = db.Column(db.String(20), index=True)
+    department = db.Column(db.String(30), index=True)
+    birthday = db.Column(db.DateTime)
+    sex = db.Column(db.String(5))
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
@@ -125,7 +149,7 @@ class Information(db.Model):
     def select_information(cls, user_id):
         raw_data = cls.query.with_entities(
             cls.id, cls.user_id, cls.name, cls.department, cls.birthday, cls.sex
-        ).filter(cls.user_id==user_id).first()
+        ).filter(cls.user_id == user_id).first()
         data = {}
         data['id'] = raw_data[0]
         data['user_id'] = raw_data[1]
@@ -136,18 +160,16 @@ class Information(db.Model):
         return data
 
     @classmethod
-    def check_information_mail(cls, user_id):
-        return db.session.query(cls).with_entities(cls.id).filter(cls.user_id == user_id).first()
-
-    @classmethod
     def insert_information(self, user_id, information_data):
-        target = Information(user_id=user_id, name=information_data['name'], department=information_data['department'], birthday=information_data['birthday'], sex=information_data['sex'], created_at=datetime.now(), updated_at=datetime.now())
+        target = Information(user_id=user_id, name=information_data['name'], department=information_data['department'],
+                             birthday=information_data['birthday'], sex=information_data['sex'],
+                             created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
 
     @classmethod
     def update_information(cls, user_id, information_data):
-        information = db.session.query(cls).filter(cls.user_id==user_id).first()
+        information = db.session.query(cls).filter(cls.user_id == user_id).first()
         if 'name' in information_data:
             information.name = information_data['name']
         if 'department' in information_data:
@@ -159,11 +181,9 @@ class Information(db.Model):
         information.updated_at = datetime.now()
         db.session.commit()
 
-
-        # db_cur.execute(
-        #     "UPDATE information SET name=%s, department=%s, birthday=%s, sex=%s, updated_at=%s  WHERE user_id = %s",
-        #     (information.name, information.department, information.birthday, information.sex, datetime.now(), user_id))
-
+    @classmethod
+    def check_information_mail(cls, user_id):
+        return db.session.query(cls).with_entities(cls.id).filter(cls.user_id == user_id).first()
 
 
 # gmail APIで取得したメール情報を格納したテーブル
@@ -223,7 +243,9 @@ class Mail(db.Model):
 
     @classmethod
     def insert_mail(self, user_id, message, sender_name, sender_email, date):
-        target = Mail(user_id=user_id, message_id=message['ID'], sender_name=sender_name, sender_email=sender_email, date=date, subject=message['Subject'], message=None, created_at=datetime.now(), updated_at=datetime.now())
+        target = Mail(user_id=user_id, message_id=message['ID'], sender_name=sender_name, sender_email=sender_email,
+                      date=date, subject=message['Subject'], message=None, created_at=datetime.now(),
+                      updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
         # db_cur.execute(
@@ -255,7 +277,8 @@ class Calendar(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
-    def __init__(self, user_id, event_id, link, event_created, event_updated, title, description, location, creator, all_day, start, end, date, sort_date, created_at, updated_at):
+    def __init__(self, user_id, event_id, link, event_created, event_updated, title, description, location, creator,
+                 all_day, start, end, date, sort_date, created_at, updated_at):
         self.user_id = user_id
         self.event_id = event_id
         self.link = link
@@ -287,7 +310,11 @@ class Calendar(db.Model):
             sote_date = insert_data[9]
         elif insert_data[8] == 1:
             sote_date = insert_data[11]
-        target = Calendar(user_id=user_id, event_id=insert_data[0], link=insert_data[1], title=insert_data[2] ,description=insert_data[3], location=insert_data[4], event_created=insert_data[5], event_updated=insert_data[6], creator=insert_data[7], all_day=insert_data[8], start=insert_data[9], end=insert_data[10], date=insert_data[11], sort_date=sote_date, created_at=datetime.now(), updated_at=datetime.now())
+        target = Calendar(user_id=user_id, event_id=insert_data[0], link=insert_data[1], title=insert_data[2],
+                          description=insert_data[3], location=insert_data[4], event_created=insert_data[5],
+                          event_updated=insert_data[6], creator=insert_data[7], all_day=insert_data[8],
+                          start=insert_data[9], end=insert_data[10], date=insert_data[11], sort_date=sote_date,
+                          created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
         # db_cur.execute(
@@ -303,7 +330,8 @@ class Calendar(db.Model):
     @classmethod
     def select_schedule_id(cls, user_id):
         raw_data = db.session.query(cls).with_entities(
-            cls.id, cls.user_id, cls.event_id, cls.link, cls.event_created, cls.event_updated, cls.title, cls.description, cls.location, cls.creator, cls.all_day, cls.start, cls.end, cls.date
+            cls.id, cls.user_id, cls.event_id, cls.link, cls.event_created, cls.event_updated, cls.title,
+            cls.description, cls.location, cls.creator, cls.all_day, cls.start, cls.end, cls.date
         ).filter(cls.user_id == user_id).order_by(cls.sort_date.asc(), cls.all_day.asc()).all()
         result_data = []
         for r in raw_data:
@@ -319,7 +347,7 @@ class Calendar(db.Model):
             data['location'] = r[8]
             data['creator'] = r[9]
             if r[10] == 0:
-                data['date'] = str(r[11]) + " - " +str(r[12])
+                data['date'] = str(r[11]) + " - " + str(r[12])
             elif r[10] == 1:
                 data['date'] = r[13].date()
             result_data.append(data)
@@ -368,7 +396,6 @@ class SlackChannel(db.Model):
         return channel
 
 
-
 # Slack内にあるチャネルのメンバー所属情報
 class SlackChannelMember(db.Model):
     __tablename__ = 'slack_channel_members'
@@ -393,7 +420,8 @@ class SlackChannelMember(db.Model):
 
     @classmethod
     def insert_channel_member(cls, user_id, channel_id):
-        target = SlackChannelMember(user_id=user_id, channel_id=channel_id, created_at=datetime.now(), updated_at=datetime.now())
+        target = SlackChannelMember(user_id=user_id, channel_id=channel_id, created_at=datetime.now(),
+                                    updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
         return target
@@ -419,7 +447,8 @@ class SlackMessage(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
-    def __init__(self, user_id, team_id, event_id, event_type, event_time, message_time, channel_id, text, file_id, reaction, created_at,
+    def __init__(self, user_id, team_id, event_id, event_type, event_time, message_time, channel_id, text, file_id,
+                 reaction, created_at,
                  updated_at):
         self.user_id = user_id
         self.team_id = team_id
@@ -447,7 +476,8 @@ class SlackMessage(db.Model):
         target = SlackMessage(user_id=user_id, team_id=message_data['team_id'], channel_id=channel_id,
                               event_id=message_data['event_id'], event_type=message_data['event']['type'],
                               event_time=message_data['event_time'], message_time=message_data['event']['event_ts'],
-                              text=message_data['event']['text'], file_id=None, reaction=None, created_at=datetime.now(), updated_at=datetime.now())
+                              text=message_data['event']['text'], file_id=None, reaction=None,
+                              created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
         return target
@@ -457,7 +487,8 @@ class SlackMessage(db.Model):
         target = SlackMessage(user_id=user_id, team_id=message_data['team_id'],
                               channel_id=channel_id, event_id=message_data['event_id'],
                               event_type=message_data['event']['type'], event_time=message_data['event_time'],
-                              message_time=None, text=None, file_id=None, reaction=None, created_at=datetime.now(), updated_at=datetime.now())
+                              message_time=None, text=None, file_id=None, reaction=None, created_at=datetime.now(),
+                              updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
         return target
@@ -478,7 +509,8 @@ class SlackMessage(db.Model):
         target = SlackMessage(user_id=user_id, team_id=message_data['team_id'],
                               channel_id=channel_id, event_id=message_data['event_id'],
                               event_type=message_data['event']['type'], event_time=message_data['event_time'],
-                              message_time=message_data['event']['item']['ts'], text=None, file_id=None, reaction=message_data['event']['reaction'],
+                              message_time=message_data['event']['item']['ts'], text=None, file_id=None,
+                              reaction=message_data['event']['reaction'],
                               created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
@@ -495,6 +527,7 @@ class SlackMessage(db.Model):
         db.session.add(target)
         db.session.commit()
         return target
+
 
 # zoomのアクセストークン
 # TO DO: 暗号化
@@ -545,7 +578,6 @@ class ZoomAccessToken(db.Model):
         #     "UPDATE zoom_access_tokens SET access_token=%s, refresh_token=%s, updated_at=%s WHERE user_id = %s",
         #     (access_token, refresh_token, datetime.now(), user_id))
 
-
     # @classmethod
     # def insert_message(self):
     #     print(self.created_at)
@@ -568,10 +600,12 @@ class ZoomMeeting(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     zoom_participant = db.relationship('ZoomParticipant', backref='meeting', lazy=True)
+
     # zoom_meeting = db.relationship('ZoomMessage', backref='meeting', lazy=True)
     # zoom_recording = db.relationship('ZoomRecording', backref='meeting', lazy=True)
 
-    def __init__(self, user_id, meeting_id, meeting_uuid, topic, start_time, duration, meeting_created, created_at, updated_at):
+    def __init__(self, user_id, meeting_id, meeting_uuid, topic, start_time, duration, meeting_created, created_at,
+                 updated_at):
         self.user_id = user_id
         self.meeting_id = meeting_id
         self.meeting_uuid = meeting_uuid
@@ -588,9 +622,10 @@ class ZoomMeeting(db.Model):
     @classmethod
     def insert_schedule(cls, user_id, meeting):
         target = ZoomMeeting(user_id=user_id, meeting_id=meeting['id'],
-                              meeting_uuid=meeting['uuid'], topic=meeting['topic'],
-                              start_time=meeting['start_time'], duration=meeting['duration'],
-                              meeting_created=meeting['created_at'], created_at=datetime.now(), updated_at=datetime.now())
+                             meeting_uuid=meeting['uuid'], topic=meeting['topic'],
+                             start_time=meeting['start_time'], duration=meeting['duration'],
+                             meeting_created=meeting['created_at'], created_at=datetime.now(),
+                             updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
         return target
@@ -606,7 +641,8 @@ class ZoomMeeting(db.Model):
 
     @classmethod
     def select_meeting(cls, user_id):
-        return db.session.query(cls).with_entities(cls.meeting_id, cls.topic, cls.start_time, cls.duration, cls.meeting_created).filter(cls.user_id == user_id).all()
+        return db.session.query(cls).with_entities(cls.meeting_id, cls.topic, cls.start_time, cls.duration,
+                                                   cls.meeting_created).filter(cls.user_id == user_id).all()
 
     # @classmethod
     # def insert_message(self):
@@ -618,7 +654,7 @@ class ZoomParticipant(db.Model):
     __tablename__ = 'zoom_participants'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),
-        UniqueConstraint('zoom_user_id','meeting_id'),
+        UniqueConstraint('zoom_user_id', 'meeting_id'),
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -641,7 +677,8 @@ class ZoomParticipant(db.Model):
 
     @classmethod
     def insert_participant(cls, user_id, meeting_id, participant):
-        target = ZoomMeeting(user_id=user_id, meeting_id=meeting_id, zoom_user_id=participant['id'], zoom_name=participant['name'], created_at=datetime.now(), updated_at=datetime.now())
+        target = ZoomMeeting(user_id=user_id, meeting_id=meeting_id, zoom_user_id=participant['id'],
+                             zoom_name=participant['name'], created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
         # db_cur.execute(
