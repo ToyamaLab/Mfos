@@ -15,6 +15,7 @@ def get_slack_message():
     raw_data = request.get_data()
     message_data = json.loads(raw_data.decode(encoding='utf-8'))
     channel_check = 0
+    print(message_data)
 
     try:
         if message_data['event']['type'] == 'channel_created':
