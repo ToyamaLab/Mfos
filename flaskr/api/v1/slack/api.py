@@ -26,6 +26,7 @@ def get_slack_message():
             SlackMessage.insert_message_channel(user_id, channel_id, message_data)
 
         elif message_data['event']['type'] == 'channel_rename':
+            print(message_data['authed_users'])
             print(message_data['authed_users'][0])
             user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
             print(user_id)
