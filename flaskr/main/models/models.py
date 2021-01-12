@@ -253,8 +253,11 @@ class Mail(db.Model):
         #     (user_id, message['ID'], sender_name, sender_email, date, message['Subject'], datetime.now(), datetime.now()))
 
 
-# Google Calendar APIで取得したカレンダー情報を格納したテーブル
 class Calendar(db.Model):
+    """
+        作成者: kazu
+        概要: Google Calendar APIで取得したカレンダー情報を保存するテーブル
+    """
     __tablename__ = 'schedule'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
@@ -268,7 +271,6 @@ class Calendar(db.Model):
     title = db.Column(db.String(50), nullable=False)
     description = db.Column(db.String(400))
     location = db.Column(db.String(50))
-    creator = db.Column(db.String(50), nullable=False)
     all_day = db.Column(db.Boolean, nullable=False, default=False)
     start = db.Column(db.DateTime)
     end = db.Column(db.DateTime)
@@ -277,7 +279,7 @@ class Calendar(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
-    def __init__(self, user_id, event_id, link, event_created, event_updated, title, description, location, creator,
+    def __init__(self, user_id, event_id, link, event_created, event_updated, title, description, location,
                  all_day, start, end, date, sort_date, created_at, updated_at):
         self.user_id = user_id
         self.event_id = event_id
@@ -287,7 +289,6 @@ class Calendar(db.Model):
         self.title = title
         self.description = description
         self.location = location
-        self.creator = creator
         self.all_day = all_day
         self.start = start
         self.end = end
@@ -297,41 +298,46 @@ class Calendar(db.Model):
         self.updated_at = updated_at
 
     def __str__(self):
-        return f"id = {self.id}, user_id = {self.user_id}, event_id = {self.event_id}, link = {self.link}, event_created = {self.event_created}, event_updated = {self.event_updated}, title = {self.title}, description = {self.description}, location = {self.location}, creator = {self.creator}, all_day = {self.all_day}, start = {self.start}, end = {self.end}, date = {self.date}, sort_date = {self.sort_date}, create_at={self.created_at}, update_at={self.updated_at} "
+        return f"id = {self.id}, user_id = {self.user_id}, event_id = {self.event_id}, link = {self.link}, event_created = {self.event_created}, event_updated = {self.event_updated}, title = {self.title}, description = {self.description}, location = {self.location}, all_day = {self.all_day}, start = {self.start}, end = {self.end}, date = {self.date}, sort_date = {self.sort_date}, create_at={self.created_at}, update_at={self.updated_at} "
 
     @classmethod
-    def insert_message(self):
-        print(self.created_at)
-        db.session.add(self)
-
-    @classmethod
-    def insert_schedule(cls, user_id, insert_data):
-        if insert_data[8] == 0:
-            sote_date = insert_data[9]
-        elif insert_data[8] == 1:
-            sote_date = insert_data[11]
-        target = Calendar(user_id=user_id, event_id=insert_data[0], link=insert_data[1], title=insert_data[2],
-                          description=insert_data[3], location=insert_data[4], event_created=insert_data[5],
-                          event_updated=insert_data[6], creator=insert_data[7], all_day=insert_data[8],
-                          start=insert_data[9], end=insert_data[10], date=insert_data[11], sort_date=sote_date,
+    def insert_schedule(cls, user_id, event_data):
+        target = Calendar(user_id=user_id, event_id=event_data['id'], link=event_data['htmlLink'], title=event_data['summary'],
+                          description=event_data['description'], location=event_data['location'], event_created=event_data['created'],
+                          event_updated=event_data['updated'], all_day=event_data['all_day'],
+                          start=event_data['start'], end=event_data['end'], date=event_data['date'], sort_date=event_data['sort_date'],
                           created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
-        # db_cur.execute(
-        #     "INSERT INTO schedule(user_id, event_id, link, title, description, location, event_created, event_updated, creator, all_day, start, end, date, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        #     (user_id, insert_data[0], insert_data[1], insert_data[2], insert_data[3], insert_data[4], insert_data[5],
-        #      insert_data[6], insert_data[7], insert_data[8], insert_data[9], insert_data[10], insert_data[11], datetime.now(),
-        #      datetime.now()))
+
+    @classmethod
+    def update_schedule(cls, event_data):
+        schedule = db.session.query(cls).filter(cls.event_id == event_data['id']).first()
+        schedule.event_updated = event_data['updated']
+        schedule.title = event_data['summary']
+        schedule.description = event_data['description']
+        schedule.location = event_data['location']
+        schedule.all_day = event_data['all_day']
+        schedule.start = event_data['start']
+        schedule.end = event_data['end']
+        schedule.date = event_data['date']
+        schedule.sort_date = event_data['sort_date']
+        schedule.updated_at = datetime.now()
+        db.session.commit()
 
     @classmethod
     def check_schedule_event_id(cls, event_id):
-        return db.session.query(cls).with_entities(cls.id).filter(cls.event_id == event_id).first()
+        target = db.session.query(cls).with_entities(cls.id).filter(cls.event_id == event_id).first()
+        if not target:
+            return False
+        else:
+            return True
 
     @classmethod
     def select_schedule_id(cls, user_id):
         raw_data = db.session.query(cls).with_entities(
             cls.id, cls.user_id, cls.event_id, cls.link, cls.event_created, cls.event_updated, cls.title,
-            cls.description, cls.location, cls.creator, cls.all_day, cls.start, cls.end, cls.date
+            cls.description, cls.location, cls.all_day, cls.start, cls.end, cls.date
         ).filter(cls.user_id == user_id).order_by(cls.sort_date.asc(), cls.all_day.asc()).all()
         result_data = []
         for r in raw_data:
