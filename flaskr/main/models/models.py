@@ -498,11 +498,13 @@ class SlackMessage(db.Model):
                                       created_at=datetime.now(), updated_at=datetime.now())
                 db.session.add(target)
         else:
+            print('test')
             target = SlackMessage(user_id=user_id, team_id=message_data['team_id'], channel_id=channel_id,
                               event_id=message_data['event_id'], event_type=message_data['event']['type'],
                               event_time=message_data['event_time'], message_time=message_data['event']['event_ts'],
                               text=message_data['event']['text'], file_id=None, reaction=None,
                               created_at=datetime.now(), updated_at=datetime.now())
+            print(target)
             db.session.add(target)
         db.session.commit()
         return target

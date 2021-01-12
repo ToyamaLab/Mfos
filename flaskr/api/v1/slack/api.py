@@ -52,7 +52,6 @@ def get_slack_message():
                 user_id = User.check_user_slack_id(message_data['event']['user'])[0]
                 channel_id_data = SlackChannel.select_channel_id(message_data['event']['channel'])
                 if not channel_id_data:
-                    print('insert')
                     SlackChannel.insert_channel(message_data['event']['channel'], None)
                 channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
                 print(channel_id)
