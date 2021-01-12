@@ -1,7 +1,6 @@
 import datetime
 from flask import Blueprint
 from googleapiclient.discovery import build
-from oauth2client.service_account import ServiceAccountCredentials
 from flaskr.api.v1.account_management import google_account_management
 from flaskr.api.v1.calendar import (
     User,
@@ -20,74 +19,68 @@ def initialize_calendar():
     return build('calendar', 'v3', credentials=credentials, cache_discovery=False)
 
 
-@api_v1_calendar_bp.route('/get', methods=['GET'])
+@api_v1_calendar_bp.route('/regist', methods=['POST'])
 def get_calendar():
+    """
+        作成者: kazu
+        概要: Google Calendarの情報を保存するメソッド
+        基本的な考え方:
+            Google Calendar APIを利用し, 現在時刻より30日間の予定を取得.
+            データベース内のデータと照合し, 新規保存や更新などを行う.
+    """
     calendar = initialize_calendar()
     events_result = calendar.events().list(
         calendarId=GOOGLE_CALENDAR_ID,
-        timeMin=datetime.datetime.now().isoformat()+"Z",
-        timeMax=(datetime.datetime.now() + datetime.timedelta(days=10)).isoformat()+"Z",
+        timeMin=datetime.datetime.utcnow().isoformat()+"Z",
+        timeMax=(datetime.datetime.utcnow() + datetime.timedelta(days=30)).isoformat()+"Z",
         singleEvents=True,
         orderBy='startTime'
     ).execute()
     events = events_result.get('items', [])
-    results = []
 
     if not events:
-        print('No upcoming events found')
+        return {
+            'status': 200,
+            'data': 'No upcoming events found'
+        }
 
     events_data = []
     for event in events:
         single_keys = ['id', 'htmlLink', 'summary', 'description', 'location']
-        event_data=[]
+        event_data = {}
         for key in single_keys:
             if key in event:
-                event_data.append(event[key])
+                event_data[key] = event[key]
             else:
-                event_data.append('')
+                event_data[key] = None
         created_date = event['created'].replace('T', ' ').rstrip('Z')
-        created = datetime.datetime.fromisoformat(created_date)
+        event_data['created'] = datetime.datetime.fromisoformat(created_date)
         updated_date = event['updated'].replace('T', ' ').rstrip('Z')
-        updated = datetime.datetime.fromisoformat(updated_date)
-        creator = event['creator']['email']
+        event_data['updated'] = datetime.datetime.fromisoformat(updated_date)
+        event_data['creator'] = event['creator']['email']
         if 'dateTime' in event['start']:
-            allDay = False
-            start = datetime.datetime.fromisoformat(event['start']['dateTime']).strftime("%Y/%m/%d %H:%M:%S.%f")
-            end = datetime.datetime.fromisoformat(event['end']['dateTime']).strftime("%Y/%m/%d %H:%M:%S.%f")
-            date = None
+            event_data['all_day'] = False
+            event_data['start'] = datetime.datetime.fromisoformat(event['start']['dateTime']).strftime("%Y/%m/%d %H:%M:%S.%f")
+            event_data['end'] = datetime.datetime.fromisoformat(event['end']['dateTime']).strftime("%Y/%m/%d %H:%M:%S.%f")
+            event_data['date'] = None
+            event_data['sort_date'] = event_data['start']
         else:
-            allDay = True
-            start = None
-            end = None
-            date = event['start']['date']
-        event_data.append(str(created))
-        event_data.append(str(updated))
-        event_data.append(creator)
-        event_data.append(allDay)
-        if allDay:
-            event_data.append(start)
-            event_data.append(end)
-            event_data.append(str(date))
-        else:
-            event_data.append(str(start))
-            event_data.append(str(end))
-            event_data.append(date)
+            event_data['all_day'] = True
+            event_data['start'] = None
+            event_data['end'] = None
+            event_data['date'] = event['start']['date']
+            event_data['sort_date'] = event_data['date']
         events_data.append(event_data)
 
-    for insert_data in events_data:
-        try:
-            data = Calendar.check_schedule_event_id(insert_data[0])[0]
-        except Exception:
-            result = {}
-            user_id = User.check_user_mail(insert_data[7])[0]
-            Calendar.insert_schedule(user_id, insert_data)
-            result['user_id'] = user_id
-            result['data'] = insert_data
-            results.append(result)
+        if Calendar.check_schedule_event_id(event_data['id']):
+            Calendar.update_schedule(event_data)
+        else:
+            user_id = User.check_user_mail(event_data['creator'])[0]
+            Calendar.insert_schedule(user_id, event_data)
 
     response = {
         'status': 200,
-        'data': results
+        'data': events_data
     }
 
     return response
