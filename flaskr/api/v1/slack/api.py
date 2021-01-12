@@ -54,7 +54,6 @@ def get_slack_message():
                 if not channel_id_data:
                     SlackChannel.insert_channel(message_data['event']['channel'], None)
                 channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
-                print(channel_id)
                 SlackMessage.insert_message(user_id, channel_id, message_data)
             else:
                 return {
@@ -62,7 +61,6 @@ def get_slack_message():
                         'error': 'text is not exist.'
                     }
 
-        print('aaa')
         if channel_check == 0:
             exist = SlackChannelMember.check_by_ids(user_id, channel_id)
             if not exist:
