@@ -50,14 +50,12 @@ def get_slack_message():
         elif message_data['event']['type'] == 'message':
             if 'text' in message_data['event']:
                 user_id = User.check_user_slack_id(message_data['event']['user'])[0]
-                print(user_id)
-                print('slack_id')
                 channel_id_data = SlackChannel.select_channel_id(message_data['event']['channel'])
-                print('channel_id')
                 if not channel_id_data:
                     print('insert')
                     SlackChannel.insert_channel(message_data['event']['channel'], None)
                 channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
+                print(channel_id)
                 SlackMessage.insert_message(user_id, channel_id, message_data)
             else:
                 return {
