@@ -354,8 +354,11 @@ class Calendar(db.Model):
         return result_data
 
 
-# Slack内にあるチャネル情報
 class SlackChannel(db.Model):
+    """
+        作成者: kazu
+        概要: Slack内のチャネル情報を保存するテーブル
+    """
     __tablename__ = 'slack_channels'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),
@@ -396,12 +399,14 @@ class SlackChannel(db.Model):
         return channel
 
 
-# Slack内にあるチャネルのメンバー所属情報
 class SlackChannelMember(db.Model):
+    """
+            作成者: kazu
+            概要: チャネルとメンバーの関係を保存するテーブル
+    """
     __tablename__ = 'slack_channel_members'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),
-        # UniqueConstraint('user_id', 'channel_id'),
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -435,9 +440,11 @@ class SlackChannelMember(db.Model):
             return True
 
 
-
-# Slackより取得したメッセージ情報
 class SlackMessage(db.Model):
+    """
+            作成者: kazu
+            概要: Slack内メッセージを保存するテーブル
+    """
     __tablename__ = 'slack_messages'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
@@ -446,7 +453,7 @@ class SlackMessage(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     team_id = db.Column(db.String(20), index=True, nullable=False)
     channel_id = db.Column(db.Integer, db.ForeignKey('slack_channels.id'))
-    event_id = db.Column(db.String(20), nullable=False)
+    event_id = db.Column(db.String(20), nullable=False, unique=True)
     event_type = db.Column(db.String(20), index=True, nullable=False)
     event_time = db.Column(db.Integer, nullable=False)
     message_time = db.Column(db.Float(10))
@@ -560,6 +567,15 @@ class SlackMessage(db.Model):
         target.updated_at = datetime.now()
         db.session.commit()
         return target
+
+    @classmethod
+    def check_duplicate(cls, message_data):
+        target = db.session.query(cls).with_entities(cls.id).filter(cls.event_id == message_data['event_id']).first()
+        if not target:
+            return False
+        else:
+            return True
+
 
 
 # zoomのアクセストークン
