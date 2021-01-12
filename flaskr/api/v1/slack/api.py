@@ -49,7 +49,7 @@ def get_slack_message():
 
         elif message_data['event']['type'] == 'message':
             if 'text' in message_data['event']:
-                user_id = User.check_user_slack_id(message_data['event']['user'])
+                user_id = User.check_user_slack_id(message_data['event']['user'])[0]
                 print(user_id)
                 print('slack_id')
                 channel_id_data = SlackChannel.select_channel_id(message_data['event']['channel'])
