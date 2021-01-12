@@ -362,7 +362,7 @@ class SlackChannel(db.Model):
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
     channel_id = db.Column(db.String(50), index=True, nullable=False)
-    name = db.Column(db.String(50), nullable=False)
+    name = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     channel = db.relationship('SlackMessage', backref='channel', lazy=True)
@@ -426,6 +426,15 @@ class SlackChannelMember(db.Model):
         db.session.commit()
         return target
 
+    @classmethod
+    def check_by_ids(cls, user_id, channel_id):
+        target = db.session.query(cls).with_entities(cls.id).filter(cls.user_id == user_id).filter(cls.channel_id == channel_id).first()
+        if not target:
+            return False
+        else:
+            return True
+
+
 
 # Slackより取得したメッセージ情報
 class SlackMessage(db.Model):
@@ -442,13 +451,15 @@ class SlackMessage(db.Model):
     event_time = db.Column(db.Integer, nullable=False)
     message_time = db.Column(db.Float(10))
     file_id = db.Column(db.String(20))
+    file_name = db.Column(db.String(50))
+    file_deleted = db.Column(db.Integer, default=0)
     text = db.Column(db.String(300))
     reaction = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
     def __init__(self, user_id, team_id, event_id, event_type, event_time, message_time, channel_id, text, file_id,
-                 reaction, created_at,
+                 file_name, file_deleted, reaction, created_at,
                  updated_at):
         self.user_id = user_id
         self.team_id = team_id
@@ -459,6 +470,8 @@ class SlackMessage(db.Model):
         self.channel_id = channel_id
         self.text = text
         self.file_id = file_id
+        self.file_name = file_name
+        self.file_deleted = file_deleted
         self.reaction = reaction
         self.created_at = created_at
         self.updated_at = updated_at
@@ -466,19 +479,31 @@ class SlackMessage(db.Model):
     def __str__(self):
         return f"id = {self.id}, user_id={self.user_id}, team_id={self.team_id}, event_id={self.event_id}, event_type={self.event_type}, " \
                f"event_time={self.event_time}, message_time={self.message_time}, " \
-               f"channel_id={self.channel_id}, text={self.text}, file_id={self.file_id}, reaction={self.reaction}, create_at={self.created_at}, update_at={self.updated_at} "
+               f"channel_id={self.channel_id}, text={self.text}, file_id={self.file_id}, file_name={self.file_name}, " \
+               f"file_deleted={self.file_deleted}, reaction={self.reaction}, create_at={self.created_at}, update_at=" \
+               f"{self.updated_at} "
 
     @classmethod
     def insert_message(cls, user_id, channel_id, message_data):
         if 'edited' in message_data['event']:
             message_data['event']['type'] = 'message_edited'
             message_data['event']['event_ts'] = message_data['event']['edited']['ts']
-        target = SlackMessage(user_id=user_id, team_id=message_data['team_id'], channel_id=channel_id,
+        if 'files' in message_data['event']:
+            for file in message_data['event']['files']:
+                target = SlackMessage(user_id=user_id, team_id=message_data['team_id'], channel_id=channel_id,
+                                      event_id=message_data['event_id'], event_type=message_data['event']['type'],
+                                      event_time=message_data['event_time'],
+                                      message_time=message_data['event']['event_ts'],
+                                      text=message_data['event']['text'], file_id=file['id'], reaction=None,
+                                      created_at=datetime.now(), updated_at=datetime.now())
+                db.session.add(target)
+        else:
+            target = SlackMessage(user_id=user_id, team_id=message_data['team_id'], channel_id=channel_id,
                               event_id=message_data['event_id'], event_type=message_data['event']['type'],
                               event_time=message_data['event_time'], message_time=message_data['event']['event_ts'],
                               text=message_data['event']['text'], file_id=None, reaction=None,
                               created_at=datetime.now(), updated_at=datetime.now())
-        db.session.add(target)
+            db.session.add(target)
         db.session.commit()
         return target
 
@@ -525,6 +550,14 @@ class SlackMessage(db.Model):
                               reaction=None,
                               created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
+        db.session.commit()
+        return target
+
+    @classmethod
+    def delete_file(cls, file_id):
+        target = db.session.query(cls).filter(cls.file_id == file_id).first()
+        target.file_deleted = 1
+        target.updated_at = datetime.now()
         db.session.commit()
         return target
 

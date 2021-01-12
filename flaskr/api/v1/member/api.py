@@ -88,7 +88,7 @@ def regist_member_information():
     return response
 
 
-@api_v1_member_bp.route('/update', methods=['POST'])
+@api_v1_member_bp.route('/update', methods=['PUT'])
 def update_member_information():
     """
         作成者: kazu
