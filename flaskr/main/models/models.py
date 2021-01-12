@@ -404,7 +404,7 @@ class SlackChannelMember(db.Model):
         # UniqueConstraint('user_id', 'channel_id'),
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     channel_id = db.Column(db.Integer, db.ForeignKey('slack_channels.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)

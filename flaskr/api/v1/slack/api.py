@@ -16,6 +16,11 @@ def get_slack_message():
     message_data = json.loads(raw_data.decode(encoding='utf-8'))
     channel_check = 0
 
+    print('start')
+    print(message_data)
+    print(message_data['event']['type'])
+
+
     try:
         if message_data['event']['type'] == 'channel_created':
             user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
@@ -49,8 +54,11 @@ def get_slack_message():
 
         elif message_data['event']['type'] == 'message':
             if 'text' in message_data['event']:
+                print('text exist')
                 user_id = User.check_user_slack_id(message_data['event']['user'])[0]
+                print('slack_id')
                 channel_id_data = SlackChannel.select_channel_id(message_data['event']['channel'])
+                print('channel_id')
                 if not channel_id_data:
                     SlackChannel.insert_channel(message_data['event']['channel'], None)
                 channel_id = SlackChannel.select_channel_id(message_data['event']['channel'])[0]
