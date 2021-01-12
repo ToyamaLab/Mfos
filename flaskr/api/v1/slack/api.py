@@ -26,16 +26,24 @@ def get_slack_message():
             SlackMessage.insert_message_channel(user_id, channel_id, message_data)
 
         elif message_data['event']['type'] == 'channel_rename':
+            print('aaa')
             user_id = User.check_user_slack_id(message_data['authed_users'][0])[0]
+            print(user_id)
             channel_id_data = SlackChannel.select_channel_id(message_data['event']['channel']['id'])
+            print(channel_id_data)
             if not channel_id_data:
+                print('bbb')
                 SlackChannel.insert_channel(message_data['event']['channel']['id'],
                                             message_data['event']['channel']['name'])
             else:
+                print('ccc')
                 SlackChannel.update_channel_name(message_data['event']['channel']['id'],
                                              message_data['event']['channel']['name'])
+            print('ddd')
             channel_id = SlackChannel.select_channel_id(message_data['event']['channel']['id'])[0]
+            print(channel_id)
             SlackMessage.insert_message_channel(user_id, channel_id, message_data)
+            print('eee')
 
         elif message_data['event']['type'] == 'file_deleted':
             try:
