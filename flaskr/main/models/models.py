@@ -383,6 +383,8 @@ class SlackChannel(db.Model):
 
     @classmethod
     def insert_channel(cls, channel_id, name):
+        print(channel_id)
+        print(name)
         target = SlackMessage(channel_id=channel_id, name=name, created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(target)
         db.session.commit()
