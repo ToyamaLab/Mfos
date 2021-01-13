@@ -8,7 +8,6 @@ from .models import (
     SlackMessage,
     ZoomAccessToken,
     ZoomMeeting,
-    ZoomParticipant,
     Project,
 )
 
@@ -23,6 +22,5 @@ __all__ = [
     SlackMessage,
     ZoomAccessToken,
     ZoomMeeting,
-    ZoomParticipant,
     Project,
 ]

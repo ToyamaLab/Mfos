@@ -24,7 +24,7 @@ class User(db.Model):
     slack_message = db.relationship('SlackMessage', backref='user', lazy=True)
     zoom_access_token = db.relationship('ZoomAccessToken', backref='user', lazy=True)
     zoom_meeting = db.relationship('ZoomMeeting', backref='user', lazy=True)
-    zoom_participant = db.relationship('ZoomParticipant', backref='user', lazy=True)
+    # zoom_participant = db.relationship('ZoomParticipant', backref='user', lazy=True)
 
     def __init__(self, slack_id, gmail, created_at, updated_at):
         self.slack_id = slack_id
@@ -593,10 +593,11 @@ class SlackMessage(db.Model):
             return True
 
 
-
-# zoomのアクセストークン
-# TO DO: 暗号化
 class ZoomAccessToken(db.Model):
+    """
+        作成者: kazu
+        概要: Zoom Apiへのアクセストークンを保存するテーブル
+    """
     __tablename__ = 'zoom_access_tokens'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
@@ -621,16 +622,10 @@ class ZoomAccessToken(db.Model):
     @classmethod
     def get_access_token(cls, user_id):
         return db.session.query(cls).with_entities(cls.access_token).filter(cls.user_id == user_id).first()
-        # return cls.query.with_entities(
-        #     cls.access_token
-        # ).filter(cls.user_id == user_id).first()
 
     @classmethod
     def get_refresh_token(cls, user_id):
         return db.session.query(cls).with_entities(cls.refresh_token).filter(cls.user_id == user_id).first()
-        # return cls.query.with_entities(
-        #     cls.refresh_token
-        # ).filter(cls.user_id == user_id).first()
 
     @classmethod
     def update_access_token(cls, user_id, access_token, refresh_token):
@@ -639,35 +634,28 @@ class ZoomAccessToken(db.Model):
         target.refresh_token = refresh_token
         target.updated_at = datetime.now()
         db.session.commit()
-        # db_cur.execute(
-        #     "UPDATE zoom_access_tokens SET access_token=%s, refresh_token=%s, updated_at=%s WHERE user_id = %s",
-        #     (access_token, refresh_token, datetime.now(), user_id))
-
-    # @classmethod
-    # def insert_message(self):
-    #     print(self.created_at)
-    #     db.session.add(self)
 
 
 class ZoomMeeting(db.Model):
+    """
+        作成者: kazu
+        概要: Zoom APIを用いて取得したミーティング情報を保存するテーブル
+    """
     __tablename__ = 'zoom_meetings'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    meeting_id = db.Column(db.String(30), nullable=False, unique=True)
-    meeting_uuid = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    meeting_id = db.Column(db.String(30), nullable=False)
+    meeting_uuid = db.Column(db.String(50), nullable=False, unique=True)
     topic = db.Column(db.String(100), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     duration = db.Column(db.Integer, nullable=False)
     meeting_created = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
-    zoom_participant = db.relationship('ZoomParticipant', backref='meeting', lazy=True)
-
-    # zoom_meeting = db.relationship('ZoomMessage', backref='meeting', lazy=True)
-    # zoom_recording = db.relationship('ZoomRecording', backref='meeting', lazy=True)
+    # zoom_participant = db.relationship('ZoomParticipant', backref='meeting', lazy=True)
 
     def __init__(self, user_id, meeting_id, meeting_uuid, topic, start_time, duration, meeting_created, created_at,
                  updated_at):
@@ -685,18 +673,41 @@ class ZoomMeeting(db.Model):
         return f"id = {self.id}, user_id = {self.user_id}, meeting_id = {self.meeting_id}, meeting_uuid = {self.meeting_uuid}, topic = {self.topic}, start_time = {self.start_time}, duration = {self.duration}, meeting_created = {self.meeting_created}, create_at={self.created_at}, update_at={self.updated_at} "
 
     @classmethod
-    def insert_schedule(cls, user_id, meeting):
-        target = ZoomMeeting(user_id=user_id, meeting_id=meeting['id'],
-                             meeting_uuid=meeting['uuid'], topic=meeting['topic'],
-                             start_time=meeting['start_time'], duration=meeting['duration'],
-                             meeting_created=meeting['created_at'], created_at=datetime.now(),
-                             updated_at=datetime.now())
-        db.session.add(target)
+    def insert_meeting(cls, meeting_list):
+        for meeting_data in meeting_list:
+            target = ZoomMeeting(user_id=meeting_data['user_id'], meeting_id=meeting_data['meeting_id'],
+                                 meeting_uuid=meeting_data['meeting_uuid'], topic=meeting_data['topic'],
+                                 start_time=meeting_data['start_time'], duration=meeting_data['duration'],
+                                 meeting_created=meeting_data['created_at'], created_at=datetime.now(),
+                                 updated_at=datetime.now())
+            db.session.add(target)
         db.session.commit()
-        return target
-        # db_cur.execute(
-        #     "INSERT INTO zoom_meetings(user_id, meeting_id, meeting_uuid, topic, start_time, duration, meeting_created, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        #     (user_id, meeting['id'], meeting['uuid'], meeting['topic'], meeting['start_time'], meeting['duration'], meeting['created_at'], datetime.now(), datetime.now()))
+
+    @classmethod
+    def update_meeting(cls, meeting_list):
+        for meeting_data in meeting_list:
+            meeting = db.session.query(cls).filter(cls.meeting_uuid == meeting_data['meeting_uuid']).first()
+            meeting.topic = meeting_data['topic']
+            meeting.start_time = meeting_data['start_time']
+            meeting.duration = meeting_data['duration']
+            meeting.updated_at = datetime.now()
+            db.session.commit()
+
+    @classmethod
+    def check_duplicate(cls, meeting_list):
+        result = {}
+        update_target = []
+        insert_target = []
+        for meeting_data in meeting_list:
+            target = db.session.query(cls).with_entities(cls.id).filter(cls.meeting_uuid == meeting_data['meeting_uuid']).first()
+            if not target:
+                insert_target.append(meeting_data)
+            else:
+                update_target.append(meeting_data)
+        result['update'] = update_target
+        result['insert'] = insert_target
+        return result
+
 
     @classmethod
     def check_meeting_uuid(cls, meeting_uuid):
@@ -709,43 +720,38 @@ class ZoomMeeting(db.Model):
         return db.session.query(cls).with_entities(cls.meeting_id, cls.topic, cls.start_time, cls.duration,
                                                    cls.meeting_created).filter(cls.user_id == user_id).all()
 
-    # @classmethod
-    # def insert_message(self):
-    #     print(self.created_at)
-    #     db.session.add(self)
 
-
-class ZoomParticipant(db.Model):
-    __tablename__ = 'zoom_participants'
-    __table_args__ = (
-        CheckConstraint('updated_at >= created_at'),
-        UniqueConstraint('zoom_user_id', 'meeting_id'),
-    )
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    meeting_id = db.Column(db.Integer, db.ForeignKey('zoom_meetings.id'), unique=True)
-    zoom_user_id = db.Column(db.String(50), nullable=False)
-    zoom_name = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
-
-    def __init__(self, user_id, meeting_id, zoom_user_id, zoom_name, created_at, updated_at):
-        self.user_id = user_id
-        self.meeting_id = meeting_id
-        self.zoom_user_id = zoom_user_id
-        self.zoom_name = zoom_name
-        self.created_at = created_at
-        self.updated_at = updated_at
-
-    def __str__(self):
-        return f"id = {self.id}, user_id = {self.user_id}, meeting_id = {self.meeting_id}, zoom_user_id = {self.zoom_user_id}, zoom_name = {self.zoom_name} create_at={self.created_at}, update_at={self.updated_at} "
-
-    @classmethod
-    def insert_participant(cls, user_id, meeting_id, participant):
-        target = ZoomMeeting(user_id=user_id, meeting_id=meeting_id, zoom_user_id=participant['id'],
-                             zoom_name=participant['name'], created_at=datetime.now(), updated_at=datetime.now())
-        db.session.add(target)
-        db.session.commit()
+# class ZoomParticipant(db.Model):
+#     __tablename__ = 'zoom_participants'
+#     __table_args__ = (
+#         CheckConstraint('updated_at >= created_at'),
+#         UniqueConstraint('zoom_user_id', 'meeting_id'),
+#     )
+#     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
+#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+#     meeting_id = db.Column(db.Integer, db.ForeignKey('zoom_meetings.id'), unique=True)
+#     zoom_user_id = db.Column(db.String(50), nullable=False)
+#     zoom_name = db.Column(db.String(50), nullable=False)
+#     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+#     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+#
+#     def __init__(self, user_id, meeting_id, zoom_user_id, zoom_name, created_at, updated_at):
+#         self.user_id = user_id
+#         self.meeting_id = meeting_id
+#         self.zoom_user_id = zoom_user_id
+#         self.zoom_name = zoom_name
+#         self.created_at = created_at
+#         self.updated_at = updated_at
+#
+#     def __str__(self):
+#         return f"id = {self.id}, user_id = {self.user_id}, meeting_id = {self.meeting_id}, zoom_user_id = {self.zoom_user_id}, zoom_name = {self.zoom_name} create_at={self.created_at}, update_at={self.updated_at} "
+#
+#     @classmethod
+#     def insert_participant(cls, user_id, meeting_id, participant):
+#         target = ZoomMeeting(user_id=user_id, meeting_id=meeting_id, zoom_user_id=participant['id'],
+#                              zoom_name=participant['name'], created_at=datetime.now(), updated_at=datetime.now())
+#         db.session.add(target)
+#         db.session.commit()
         # db_cur.execute(
         #     "INSERT INTO zoom_meetings(user_id, meeting_id, zoom_user_id, zoom_name, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s)",
         #     (user_id, meeting_id, participant['id'], participant['name'], datetime.now(), datetime.now()))
