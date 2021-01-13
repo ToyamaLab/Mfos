@@ -28,6 +28,10 @@ GOOGLE_GMAIL_SCOPES = [
 
 
 def initialize_gmail():
+    """
+        作成者: kazu
+        概要: googleの認証を行い,　APIを使用可能にする関数
+    """
     credentials = None
     if os.path.exists("token.pickle"):
         with open("token.pickle", "rb") as token:
@@ -42,72 +46,58 @@ def initialize_gmail():
     return build('gmail', 'v1', credentials=credentials, cache_discovery=False)
 
 
-@api_v1_gmail_bp.route('/get', methods=['GET'])
-def get_calendar():
+@api_v1_gmail_bp.route('/regist', methods=['POST'])
+def regist_gmail():
+    """
+        作成者: kazu
+        概要: Gmail APIを用いてgmail情報を抽出し, データベースへ保存する関数
+    """
     gmail = initialize_gmail()
-    MessageList = []
-    results = []
+    message_list = []
 
-    query = 'after:' + str(datetime.date.today() + datetime.timedelta(days=-10)) + ' before:' + str(
+    query = 'after:' + str(datetime.date.today() + datetime.timedelta(days=-30)) + ' before:' + str(
         datetime.date.today() + datetime.timedelta(days=1))
 
-    messageIDlist = gmail.users().messages().list(userId=GOOGLE_GMAIL_ID, maxResults=100, q=query).execute()
-    if messageIDlist['resultSizeEstimate'] == 0:
-        print("Message is not found")
-        return MessageList
-    for message in messageIDlist['messages']:
-        row = {}
-        row['ID'] = message['id']
+    message_id_list = gmail.users().messages().list(userId=GOOGLE_GMAIL_ID, maxResults=100, q=query).execute()
+    if message_id_list['resultSizeEstimate'] == 0:
+        return {
+            'status': 200,
+            'data': 'No new mail'
+        }
+    for message in message_id_list['messages']:
+        message_data = {}
+        message_data['id'] = message['id']
         MessageDetail = gmail.users().messages().get(userId='me', id=message['id']).execute()
-        print(MessageDetail)
         for header in MessageDetail['payload']['headers']:
-            if header['name'] == 'Date':
-                row['Date'] = header['value']
-            elif header['name'] == 'From':
-                row['From'] = header['value']
-            elif header['name'] == 'Subject':
-                row['Subject'] = header['value']
-        MessageDetail = gmail.users().messages().get(userId="me", id=message["id"], format="full").execute()
-        if MessageDetail["payload"]["mimeType"] == "multipart/alternative":
-            for payload_parts in MessageDetail["payload"]["parts"]:
-                if payload_parts["mimeType"] == "text/plain":
-                    for payload_header in payload_parts["headers"]:
-                        if payload_header["name"] == "Content-Type" and payload_header["value"].lower() == "text/plain; charset=utf-8":
-                            row["Body"] = email.message_from_string(
-                                str(base64.urlsafe_b64decode(payload_parts["body"]["data"]), "utf-8")).get_payload()
-        MessageList.append(row)
+            if header['name'] == 'Date':  # 日時情報
+                date_data = header['value'].split()
+                months = {}
+                for i, v in enumerate(calendar.month_abbr):
+                    months[v] = i
+                date_str = date_data[3] + "-" + str(months[date_data[2]]) + "-" + date_data[1] + " " + date_data[4]
+                message_data['date'] = dt.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            elif header['name'] == 'From':  # 送信者情報
+                message_data['sender_name'] = re.split('<', header['value'])[0]
+                message_data['sender_email'] = re.findall('<.*>', header['value'])[0].strip('<').strip('>')
+            elif header['name'] == 'Subject':  # タイトル情報
+                message_data['subject'] = header['value']
+        if 'snippet' in MessageDetail:  # 本文
+            message_data['body'] = MessageDetail['snippet']
+        else:
+            message_data['body'] = None
+        user_id_data = User.check_user_mail(message_data['sender_email'])
+        if user_id_data: # 送信者のメールアドレスより, user_idを取得
+            message_data['user_id'] = user_id_data[0]
+        else:
+            message_data['user_id'] = None
 
-    for message in MessageList:
-        sender = message['From']
-        sender_name = re.split('<', sender)[0]
-        sender_email = re.findall('<.*>', sender)[0].strip('<').strip('>')
+        message_list.append(message_data)
 
-        date_data = message['Date'].split()
-        months = {}
-        for i, v in enumerate(calendar.month_abbr):
-            months[v] = i
-        date_str = date_data[3] + "-" + str(months[date_data[2]]) + "-" + date_data[1] + " " + date_data[4]
-        date = dt.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-
-        try:
-            print(sender_email)
-            user_id = User.check_user_mail(sender_email)[0]
-            Mail.insert_mail(user_id, message, sender_name, sender_email, date)
-            result = {}
-            result['user_id'] = user_id
-            result['message_id'] = message['ID']
-            result['sender_name'] = sender_name
-            result['sender_email'] = sender_email
-            result['date'] = date
-            result['subject'] = message['Subject']
-            # result['message'] = message['Body']
-            results.append(result)
-        except Exception:
-            print('Error')
-
+    target_list = Mail.check_duplicate(message_list)  # gmailテーブル内のデータに既に保存されていないか重複を確認
+    Mail.insert_mail(target_list)
     response = {
         'status': 200,
-        'result': results
+        'data': target_list
     }
 
     return response
