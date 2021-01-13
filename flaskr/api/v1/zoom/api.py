@@ -38,7 +38,7 @@ def refresh_token(user_id):
     ZoomAccessToken.update_access_token(user_id, access_token, refresh_token)
 
 
-@api_v1_zoom_bp.route('/get/meetings', methods=['GET'])
+@api_v1_zoom_bp.route('/meeting/regist', methods=['POST'])
 def get_meetings():
     """
         作成者: kazu
