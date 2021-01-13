@@ -8,6 +8,10 @@ api_v1_main_bp = Blueprint('apiv1_main', __name__, url_prefix='/api/v1')
 
 @api_v1_main_bp.route('/run', methods=['POST'])
 def run_all_api():
+    """
+        作成者: kazu
+        概要: 各Webアプリケーションから情報を取得, 保存する関数. heroku schedulerで定期実行する.
+    """
     member_result = member.regist_information_spreadsheet()
     calendar_result = calendar.regist_calendar()
     gmail_result = gmail.regist_gmail()
