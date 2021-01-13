@@ -1,5 +1,6 @@
 import base64
 import os
+import datetime
 import json
 import http.client
 from flask import Blueprint
@@ -8,7 +9,6 @@ from flaskr.api.v1.zoom import (
     User,
     ZoomAccessToken,
     ZoomMeeting,
-    ZoomParticipant,
 )
 
 api_v1_zoom_bp = Blueprint('apiv1_zoom', __name__, url_prefix='/api/v1/zoom')
@@ -18,6 +18,10 @@ accounts = zoom_account_management()
 
 
 def refresh_token(user_id):
+    """
+        作成者: kazu
+        概要: Zoom APIへのリクエストに使うアクセストークンが期限切れになっていた場合に更新する関数
+    """
     headers = {
         'host': 'zoom.us',
         'authorization': 'Basic ' + base64.b64encode((accounts['zoom_client_id'] + ":" + accounts['zoom_client_secret']).encode()).decode("ascii"),
@@ -36,7 +40,13 @@ def refresh_token(user_id):
 
 @api_v1_zoom_bp.route('/get/meetings', methods=['GET'])
 def get_meetings():
-    results_meeting = []
+    """
+        作成者: kazu
+        概要: Zoom APIより取得したミーティング情報をzoom_meetingsテーブルに保存する関数
+        基本的な考え方:
+            ミーティング情報をリストで取得した後、含まれているuuidで既にテーブルに保存されている情報かどうかを識別.
+            既に保存されている場合は開始時間などが更新されている可能性があるため更新, 保存されていない場合は新規保存を行う.
+    """
     user_id = User.check_user_mail(accounts['zoom_user_id'])[0]
     conn = http.client.HTTPSConnection("api.zoom.us")
     try:
@@ -50,7 +60,6 @@ def get_meetings():
         data = res.read().decode("utf-8")
         data_json = json.loads(data)
         meetings = data_json['meetings']
-        print(meetings)
     except Exception:
         refresh_token(user_id)
         headers_updated = {
@@ -63,141 +72,30 @@ def get_meetings():
         data = res.read().decode("utf-8")
         data_json = json.loads(data)
         meetings = data_json['meetings']
-        print(meetings)
-        headers = headers_updated
 
-    new_meeting_uuids = []
+    meeting_list = []
 
     for meeting in meetings:
-        meeting['start_time'] = meeting['start_time'].replace('T', ' ').replace('Z', '')
-        meeting['created_at'] = meeting['created_at'].replace('T', ' ').replace('Z', '')
-        new_meeting_uuids.append(meeting['uuid'])
-        # try:
-        if 1 == 1:
-            user_id = User.check_user_mail(accounts['zoom_user_id'])[0]
-            print(user_id)
-            ZoomMeeting.insert_schedule(user_id, meeting)
-            result = {}
-            result['user_id'] = user_id
-            result['meeting_id'] = meeting['id']
-            result['meeting_uuid'] = meeting['uuid']
-            result['topic'] = meeting['topic']
-            result['start_time'] = meeting['start_time']
-            result['duration'] = meeting['duration']
-            results_meeting.append(result)
-        # except Exception:
-        #     print('Error')
+        meeting_data = {}
+        meeting_data['start_time'] = datetime.datetime.strptime(meeting['start_time'].replace('T', ' ').replace('Z', ''), '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=9)
+        meeting_data['created_at'] = datetime.datetime.strptime(meeting['created_at'].replace('T', ' ').replace('Z', ''), '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=9)
+        meeting_data['meeting_id'] = meeting['id']
+        meeting_data['meeting_uuid'] = meeting['uuid']
+        meeting_data['topic'] = meeting['topic']
+        meeting_data['duration'] = meeting['duration']
+        if User.check_user_mail(accounts['zoom_user_id']):
+            meeting_data['user_id'] = User.check_user_mail(accounts['zoom_user_id'])[0]
+        else:
+            meeting_data['user_id'] = None
+        meeting_list.append(meeting_data)
 
-    # db_cur.close()
+    target = ZoomMeeting.check_duplicate(meeting_list)
+    ZoomMeeting.insert_meeting(target['insert'])
+    ZoomMeeting.update_meeting(target['update'])
 
-    # conn2 = http.client.HTTPSConnection("api.zoom.us")
-    # targets = []
-    # results_participant = []
-    #
-    # for new_meeting_uuid in new_meeting_uuids:
-    #     target = {}
-    #     conn2.request("GET", "/v2/past_meetings/" + str(new_meeting_uuid) + "/participants?page_size=200", headers=headers)
-    #     res = conn2.getresponse()
-    #     data = res.read().decode("utf-8")
-    #     data_json = json.loads(data)
-    #     print(data_json)
-    #     participants = data_json['participants']
-    #     target['uuid'] = new_meeting_uuid
-    #     target['participants'] = participants
-    #     targets.append(target)
-    #
-    # # db_cur2 = db_conn.cursor()
-    # for i in range(len(targets)):
-    #     participants = targets[i]['participants']
-    #     meeting_uuid = targets[i]['uuid']
-    #     meeting_id = ZoomMeeting.check_meeting_uuid(meeting_uuid)
-    #     for participant in participants:
-    #         try:
-    #             user_id = User.check_user_mail(participant['user_email'])[0]
-    #             ZoomParticipant.insert_participant(user_id, meeting_id, participant)
-    #             result = {}
-    #             result['user_id'] = user_id
-    #             result['meeting_id'] = meeting_id
-    #             result['zoom_user_id'] = participants['id']
-    #             result['zoom_name'] = participants['name']
-    #             results_participant.append(result)
-    #         except Exception:
-    #             print('Error')
-
-    # db_cur2.close()
-    # db_conn.commit()
-    # db_conn.close()
-
-    # {"page_size": 100, "total_records": 1, "next_page_token": "", "meetings": [
-    #     {"uuid": "bv3rEDQ9QS2WziD1IlcMTA==", "id": 77954320276, "host_id": "0K1kr54YTpOGQBDdWXXloQ", "topic": "test",
-    #      "type": 2, "start_time": "2020-12-13T15:00:00Z", "duration": 60, "timezone": "Asia/Tokyo",
-    #      "created_at": "2020-12-13T14:33:55Z",
-    #      "join_url": "https://us04web.zoom.us/j/77954320276?pwd=cGhPQTkyVHhXZUpCWi9hbUEyZU1LQT09"}]}
-
-    # results = []
-    # results.append(results_meeting)
-    # results.append(results_participant)
     response = {
         'status': 200,
-        'data': results_meeting
+        'data': target
     }
 
     return response
-
-
-# @api_v1_zoom_bp.route('/get/messages', methods=['GET'])
-# def get_messages():
-#     user_id = User.check_user_mail(account.userId)[0]
-#     headers = {
-#         'Host': 'api.zoom.us',
-#         'Authorization': "Bearer " + ZoomAccessToken.get_access_token(user_id)[0],
-#         'content-type': "application/json"
-#     }
-#     channel = 'tdPeVcJPRkqgULIzult3Zw=='
-#     conn.request("GET", "/v2/chat/users/" + account.userId + "/messages?page_size=50&to_channel=" + channel , headers=headers)
-#
-#     res = conn.getresponse()
-#     data = res.read()
-#
-#     print(data.decode("utf-8"))
-#
-#     response = {
-#         'status': 200
-#     }
-#
-#     return response
-
-
-# @api_v1_zoom_bp.route('/get/recordings', methods=['GET'])
-# def get_recordings():
-#     results = []
-#     user_id = User.check_user_mail(account.userId)[0]
-#     try:
-#         headers = {
-#             'Host': 'api.zoom.us',
-#             'Authorization': "Bearer " + ZoomAccessToken.get_access_token(user_id)[0],
-#             'content-type': "application/json"
-#         }
-#         conn.request("GET", "/v2/users/" + account.userId + "/recordings?page_size=200" , headers=headers)
-#         res = conn.getresponse()
-#         data = res.read().decode("utf-8")
-#         data_json = json.loads(data)
-#         print(data.decode("utf-8"))
-#     except Exception:
-#         refresh_token(db_conn, user_id)
-#         headers_updated = {
-#             'Host': 'api.zoom.us',
-#             'Authorization': "Bearer " + ZoomAccessToken.get_access_token(user_id)[0],
-#             'content-type': "application/json"
-#         }
-#         conn.request("GET", "/v2/users/" + account.userId + "/recordings?page_size=200", headers=headers_updated)
-#         res = conn.getresponse()
-#         data = res.read()
-#         print(data.decode("utf-8"))
-#
-#
-#     response = {
-#         'status': 200
-#     }
-#
-#     return response
