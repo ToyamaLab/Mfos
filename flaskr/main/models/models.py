@@ -186,14 +186,17 @@ class Information(db.Model):
         return db.session.query(cls).with_entities(cls.id).filter(cls.user_id == user_id).first()
 
 
-# gmail APIで取得したメール情報を格納したテーブル
 class Mail(db.Model):
+    """
+        作成者: kazu
+        概要: GMail APIで取得したgmail情報を保存するテーブル
+    """
     __tablename__ = 'gmail'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
     )
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     message_id = db.Column(db.String(50), nullable=False, unique=True)
     sender_name = db.Column(db.String(50), nullable=False)
     sender_email = db.Column(db.String(50), nullable=False)
@@ -242,16 +245,23 @@ class Mail(db.Model):
         db.session.add(self)
 
     @classmethod
-    def insert_mail(self, user_id, message, sender_name, sender_email, date):
-        target = Mail(user_id=user_id, message_id=message['ID'], sender_name=sender_name, sender_email=sender_email,
-                      date=date, subject=message['Subject'], message=None, created_at=datetime.now(),
-                      updated_at=datetime.now())
-        db.session.add(target)
-        db.session.commit()
-        # db_cur.execute(
-        #     "INSERT INTO gmail(user_id, message_id, sender_name, sender_email, date, message,  created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
-        #     (user_id, message['ID'], sender_name, sender_email, date, message['Subject'], datetime.now(), datetime.now()))
+    def check_duplicate(cls, message_list):
+        result = []
+        for message_data in message_list:
+            target = db.session.query(cls).with_entities(cls.id).filter(cls.message_id == message_data['id']).first()
+            if not target:
+                result.append(message_data)
+        return result
 
+
+    @classmethod
+    def insert_mail(self, message_list):
+        for message_data in message_list:
+            target = Mail(user_id=message_data['user_id'], message_id=message_data['id'], sender_name=message_data['sender_name'], sender_email=message_data['sender_email'],
+                          date=message_data['date'], subject=message_data['subject'], message=message_data['body'], created_at=datetime.now(),
+                          updated_at=datetime.now())
+            db.session.add(target)
+        db.session.commit()
 
 class Calendar(db.Model):
     """
