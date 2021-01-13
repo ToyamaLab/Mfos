@@ -39,7 +39,7 @@ def refresh_token(user_id):
 
 
 @api_v1_zoom_bp.route('/meeting/regist', methods=['POST'])
-def get_meetings():
+def regist_meetings():
     """
         作成者: kazu
         概要: Zoom APIより取得したミーティング情報をzoom_meetingsテーブルに保存する関数
