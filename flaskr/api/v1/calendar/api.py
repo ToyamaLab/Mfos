@@ -21,7 +21,7 @@ def initialize_calendar():
 
 
 @api_v1_calendar_bp.route('/regist', methods=['POST'])
-def get_calendar():
+def regist_calendar():
     """
         作成者: kazu
         概要: Google Calendarの情報を保存するメソッド
