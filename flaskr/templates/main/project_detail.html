@@ -12,10 +12,10 @@
             <th>従業員ID</th>
             <th>名前</th>
             <th>部署</th>
-            <th>プロジェクト関連のメール</th>
-            <th>プロジェクト関連のスケジュール</th>
-            <th>プロジェクト関連のスラックメッセージ</th>
-            <th>プロジェクト関連のズームミーティング</th>
+            <th>メール</th>
+            <th>スケジュール</th>
+            <th>スラックメッセージ</th>
+            <th>ズームミーティング</th>
         </tr>
         {% for a in analysis.user_id %}
             <tr>
@@ -30,6 +30,52 @@
         {% endfor %}
 
     </table>
+
+    <h2>貢献度を調整する</h2>
+    <form action="/project?name={{ project_name }}" method="POST" enctype="multipart/form-data">
+        <p>
+            mail: <select name="mail">
+                <option value={{ importance['mail'] }}>{{ importance['mail'] }}</option>
+                <option value=1>1</option>
+                <option value=2>2</option>
+                <option value=3>3</option>
+                <option value=4>4</option>
+                <option value=4>5</option>
+            </select>
+        </p>
+        <p>
+            schedule: <select name="schedule">
+                <option value={{ importance['schedule'] }}>{{ importance['schedule'] }}</option>
+                <option value=1>1</option>
+                <option value=2>2</option>
+                <option value=3>3</option>
+                <option value=4>4</option>
+                <option value=4>5</option>
+            </select>
+        </p>
+        <p>
+            slack: <select name="slack">
+                <option value={{ importance['slack'] }}>{{ importance['slack'] }}</option>
+                <option value=1>1</option>
+                <option value=2>2</option>
+                <option value=3>3</option>
+                <option value=4>4</option>
+                <option value=4>5</option>
+            </select>
+        </p>
+        <p>
+            zoom: <select name="zoom">
+                <option value={{ importance['zoom'] }}>{{ importance['zoom'] }}</option>
+                <option value=1>1</option>
+                <option value=2>2</option>
+                <option value=3>3</option>
+                <option value=4>4</option>
+                <option value=4>5</option>
+            </select>
+        </p>
+        <input type="submit" value="更新">
+    </form>
+
 
 {#    <h3>Gmail</h3>#}
 {#    <canvas id="myPieChart"></canvas>#}

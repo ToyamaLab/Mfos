@@ -17,7 +17,8 @@ from flaskr.main.models import (
     SlackChannel,
     SlackMessage,
     ZoomMeeting,
-    Project
+    Project,
+    Importance
 )
 
 main_bp = Blueprint('main', __name__, template_folder='templates')
@@ -138,7 +139,7 @@ def project_detail():
             analysis[i]['contribution_schedule'] = '{:.1f}'.format((analysis[i]['schedule_count'] / total_schedule_count) * 100)
         if total_slack_count != 0:
             analysis[i]['contribution_slack'] = '{:.1f}'.format((analysis[i]['slack_count'] / total_slack_count) * 100)
-        if total_zoom_count !=0:
+        if total_zoom_count != 0:
             analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
 
     data = {}
@@ -155,3 +156,84 @@ def project_detail():
         data=data,
         names_str=names_str
     )
+
+
+def project_detail_reload(name):
+    project_name = name
+    status = 0
+    while status == 0:
+        try:
+            analysis = project_analysis.analytics(project_name)
+            status = 1
+        except Exception:
+            continue
+
+    names = []
+    names_str = ""
+    gmail_data = []
+    schedule_data = []
+
+    total_mail_count = 0
+    total_schedule_count = 0
+    total_slack_count = 0
+    total_zoom_count = 0
+
+    for i in analysis['user_id']:
+        information = Information.select_information(i)
+        names_updated = []
+        names.append(information['name'])
+        gmail_data.append(analysis[i]['mail_count'])
+        schedule_data.append(analysis[i]['schedule_count'])
+        total_mail_count += analysis[i]['mail_count']
+        total_schedule_count += analysis[i]['schedule_count']
+        total_slack_count += analysis[i]['slack_count']
+        total_zoom_count += analysis[i]['zoom_count']
+
+    for i in analysis['user_id']:
+        analysis[i]['contribution_mail'] = 0
+        analysis[i]['contribution_schedule'] = 0
+        analysis[i]['contribution_slack'] = 0
+        analysis[i]['contribution_zoom'] = 0
+        if total_mail_count != 0:
+            analysis[i]['contribution_mail'] = '{:.1f}'.format((analysis[i]['mail_count']/total_mail_count)*100)
+        if total_schedule_count != 0:
+            analysis[i]['contribution_schedule'] = '{:.1f}'.format((analysis[i]['schedule_count'] / total_schedule_count) * 100)
+        if total_slack_count != 0:
+            analysis[i]['contribution_slack'] = '{:.1f}'.format((analysis[i]['slack_count'] / total_slack_count) * 100)
+        if total_zoom_count != 0:
+            analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
+
+    importance = Importance.select_importance(Project.select_project_by_name(project_name)[0])
+
+    data = {}
+    data['names'] = names
+    data['gmail_data'] = gmail_data
+    data['schedule_data'] = schedule_data
+
+    names_str = str(names)[1:-1].replace("'", "")
+
+    return render_template(
+        'main/project_detail.html',
+        project_name=project_name,
+        analysis=analysis,
+        data=data,
+        names_str=names_str,
+        importance=importance
+    )
+
+
+@main_bp.route('/project', methods=['POST'])
+def project_importance_update():
+    project_name = request.args.get('name')
+    values = {
+        'project_id': Project.select_project_by_name(project_name)[0],
+        'importance': {
+            'mail': request.form.get('mail'),
+            'schedule': request.form.get('schedule'),
+            'slack': request.form.get('slack'),
+            'zoom': request.form.get('zoom')
+        }
+    }
+    Importance.update_importance(values)
+    project_detail_reload()
+

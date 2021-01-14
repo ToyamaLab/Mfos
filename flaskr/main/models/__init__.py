@@ -9,8 +9,8 @@ from .models import (
     ZoomAccessToken,
     ZoomMeeting,
     Project,
+    Importance,
 )
-
 
 __all__ = [
     User,
@@ -23,4 +23,5 @@ __all__ = [
     ZoomAccessToken,
     ZoomMeeting,
     Project,
+    Importance,
 ]
