@@ -33,6 +33,7 @@ def top_menu():
                 User.id, User.gmail, User.slack_id, Information.name, Information.department).all()
             db.session.commit()
             db.session.close()
+            break
         except Exception:
             print('リロード')
             continue
