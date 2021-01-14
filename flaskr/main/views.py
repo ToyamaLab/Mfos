@@ -27,12 +27,13 @@ main_bp = Blueprint('main', __name__, template_folder='templates')
 def top_menu():
     user_data = None
     while not user_data:
+        print("while")
         try:
             users_data = db.session.query(User, Information).join(Information, User.id == Information.user_id).with_entities(
                 User.id, User.gmail, User.slack_id, Information.name, Information.department).all()
             db.session.commit()
             db.session.close()
-        except pymysql.err.OperationalError:
+        except Exception:
             print('リロード')
             continue
 
