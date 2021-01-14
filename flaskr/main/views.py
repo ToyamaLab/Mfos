@@ -49,9 +49,6 @@ def top_menu():
         users.append(user)
 
     projects = Project.select_project()
-    print(projects)
-
-    print(project_analysis.analytics('test'))
 
     return render_template(
         'main/top.html',
@@ -64,20 +61,27 @@ def top_menu():
 def user_detail():
     # try:
     user_id = request.args.get('id')
-    user = User.select_users_by_id(user_id)
-    information = Information.select_information(user_id)
-    mail = Mail.select_mail(user_id)
-    schedule = Calendar.select_schedule_id(user_id)
-    slack_channel = db.session.query(SlackChannelMember, SlackChannel).join(SlackChannel, SlackChannelMember.channel_id == SlackChannel.id).with_entities(
-        SlackChannelMember.user_id, SlackChannelMember.channel_id, SlackChannel.name).filter(SlackChannelMember.user_id==user_id).all()
-    print(slack_channel)
-    db.session.commit()
-    db.session.close()
-    slack_message = db.session.query(SlackMessage, SlackChannel).join(SlackChannel, SlackMessage.channel_id == SlackChannel.id).with_entities(
-        SlackMessage.id, SlackMessage.event_id, SlackMessage.event_type, SlackMessage.event_time, SlackMessage.message_time, SlackMessage.file_id, SlackMessage.text, SlackMessage.reaction, SlackChannel.name).filter(SlackMessage.user_id==user_id).all()
-    db.session.commit()
-    db.session.close()
-    zoom_meeting = ZoomMeeting.select_meeting(user_id)
+    status = 0
+    while status == 0:
+        try:
+            user = User.select_users_by_id(user_id)
+            information = Information.select_information(user_id)
+            mail = Mail.select_mail(user_id)
+            schedule = Calendar.select_schedule_id(user_id)
+            slack_channel = db.session.query(SlackChannelMember, SlackChannel).join(SlackChannel, SlackChannelMember.channel_id == SlackChannel.id).with_entities(
+                SlackChannelMember.user_id, SlackChannelMember.channel_id, SlackChannel.name).filter(SlackChannelMember.user_id==user_id).all()
+            print(slack_channel)
+            db.session.commit()
+            db.session.close()
+            slack_message = db.session.query(SlackMessage, SlackChannel).join(SlackChannel, SlackMessage.channel_id == SlackChannel.id).with_entities(
+                SlackMessage.id, SlackMessage.event_id, SlackMessage.event_type, SlackMessage.event_time, SlackMessage.message_time, SlackMessage.file_id, SlackMessage.text, SlackMessage.reaction, SlackChannel.name).filter(SlackMessage.user_id==user_id).all()
+            db.session.commit()
+            db.session.close()
+            zoom_meeting = ZoomMeeting.select_meeting(user_id)
+            status = 1
+        except Exception:
+            continue
+
 
     return render_template(
         'main/user_detail.html',
@@ -94,7 +98,14 @@ def user_detail():
 def project_detail():
     # try:
     project_name = request.args.get('name')
-    analysis = project_analysis.analytics(project_name)
+    status = 0
+    while status == 0:
+        try:
+            analysis = project_analysis.analytics(project_name)
+            status = 1
+        except Exception:
+            continue
+
     names = []
     names_str = ""
     gmail_data = []
