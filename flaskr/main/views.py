@@ -118,7 +118,7 @@ def project_detail():
             analysis[i]['contribution_schedule'] = '{:.1f}'.format((analysis[i]['schedule_count'] / total_schedule_count) * 100)
         if total_slack_count != 0:
             analysis[i]['contribution_slack'] = '{:.1f}'.format((analysis[i]['slack_count'] / total_slack_count) * 100)
-        if total_zoom_count !=0
+        if total_zoom_count !=0:
             analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
 
     data = {}
