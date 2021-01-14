@@ -24,8 +24,6 @@ main_bp = Blueprint('main', __name__, template_folder='templates')
 
 @main_bp.route('/')
 def top_menu():
-    # try:
-        # users = User.select_users()
     users_data = db.session.query(User, Information).join(Information, User.id == Information.user_id).with_entities(
         User.id, User.gmail, User.slack_id, Information.name, Information.department).all()
     db.session.commit()
@@ -51,9 +49,6 @@ def top_menu():
         users=users,
         projects=projects
     )
-
-    # except Exception:
-    #     top_menu()
 
 
 @main_bp.route('/user')
@@ -86,21 +81,6 @@ def user_detail():
         zoom_meeting=zoom_meeting,
     )
 
-    # except Exception:
-    #     user_detail()
-
-    # print(user)
-    # print(information)
-    # print(mail)
-    # print(schedule)
-    # print(slack_channel)
-    # print(slack_message)
-    # print(zoom_meeting)
-
-
-
-
-
 @main_bp.route('/project')
 def project_detail():
     # try:
@@ -128,10 +108,18 @@ def project_detail():
         total_zoom_count += analysis[i]['zoom_count']
 
     for i in analysis['user_id']:
-        analysis[i]['contribution_mail'] = '{:.1f}'.format((analysis[i]['mail_count']/total_mail_count)*100)
-        analysis[i]['contribution_schedule'] = '{:.1f}'.format((analysis[i]['schedule_count'] / total_schedule_count) * 100)
-        analysis[i]['contribution_slack'] = '{:.1f}'.format((analysis[i]['slack_count'] / total_slack_count) * 100)
-        analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
+        analysis[i]['contribution_mail'] = 0
+        analysis[i]['contribution_schedule'] = 0
+        analysis[i]['contribution_slack'] = 0
+        analysis[i]['contribution_zoom'] = 0
+        if total_mail_count != 0:
+            analysis[i]['contribution_mail'] = '{:.1f}'.format((analysis[i]['mail_count']/total_mail_count)*100)
+        if total_schedule_count != 0:
+            analysis[i]['contribution_schedule'] = '{:.1f}'.format((analysis[i]['schedule_count'] / total_schedule_count) * 100)
+        if total_slack_count != 0:
+            analysis[i]['contribution_slack'] = '{:.1f}'.format((analysis[i]['slack_count'] / total_slack_count) * 100)
+        if total_zoom_count !=0
+            analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
 
     data = {}
     data['names'] = names
@@ -139,9 +127,6 @@ def project_detail():
     data['schedule_data'] = schedule_data
 
     names_str = str(names)[1:-1].replace("'", "")
-        # data['names'] = ["A型", "O型", "B型", "AB型"]
-        # data['gmail_data'] = [38, 31, 21, 10]
-
 
     return render_template(
         'main/project_detail.html',
@@ -149,9 +134,4 @@ def project_detail():
         analysis=analysis,
         data=data,
         names_str=names_str
-            # names=str(names),
-            # gmail_data=str(gmail_data)
     )
-
-    # except Exception:
-    #     project_detail()
