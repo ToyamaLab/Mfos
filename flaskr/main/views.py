@@ -2,6 +2,7 @@ import json
 import re
 import os
 import mysql.connector as mydb
+import pymysql
 from flask import Blueprint, render_template, request
 from flaskr.database import db
 from flaskr.main.functions import project_analysis
@@ -24,10 +25,16 @@ main_bp = Blueprint('main', __name__, template_folder='templates')
 
 @main_bp.route('/')
 def top_menu():
-    users_data = db.session.query(User, Information).join(Information, User.id == Information.user_id).with_entities(
-        User.id, User.gmail, User.slack_id, Information.name, Information.department).all()
-    db.session.commit()
-    db.session.close()
+    user_data = None
+    while not user_data:
+        try:
+            users_data = db.session.query(User, Information).join(Information, User.id == Information.user_id).with_entities(
+                User.id, User.gmail, User.slack_id, Information.name, Information.department).all()
+            db.session.commit()
+            db.session.close()
+        except pymysql.err.OperationalError:
+            print('リロード')
+            continue
 
     users = []
     for user_data in users_data:
