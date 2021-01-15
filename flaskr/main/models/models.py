@@ -86,6 +86,10 @@ class User(db.Model):
 
 
 class Project(db.Model):
+    """
+        作成者: kazu
+        概要: コミュニティ内で運用されているプロジェクト名を保存しているテーブル
+    """
     __tablename__ = 'projects'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
@@ -120,6 +124,10 @@ class Project(db.Model):
 
 
 class Importance(db.Model):
+    """
+        作成者: kazu
+        概要: 各プロジェクトごとに設定された各Webアプリケーションの重要度を保存するテーブル
+    """
     __tablename__ = 'projects_importance'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
@@ -151,11 +159,30 @@ class Importance(db.Model):
 
     @classmethod
     def update_importance(cls, values):
-        for value in values['importance']:
-            target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(cls.service == value['service']).first()
-            target.importance = value['importance']
-            target.updated_at = datetime.now()
-            db.session.add(target)
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'mail').first()
+        target.importance = values['importance']['mail']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'schedule').first()
+        target.importance = values['importance']['schedule']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'slack').first()
+        target.importance = values['importance']['slack']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'zoom').first()
+        target.importance = values['importance']['zoom']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
         db.session.commit()
 
 

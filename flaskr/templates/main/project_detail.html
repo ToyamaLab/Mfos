@@ -12,6 +12,7 @@
             <th>従業員ID</th>
             <th>名前</th>
             <th>部署</th>
+            <th>全体貢献度</th>
             <th>メール</th>
             <th>スケジュール</th>
             <th>スラックメッセージ</th>
@@ -22,6 +23,7 @@
                 <th>{{ a }}</th>
                 <th>{{ analysis[a]['name'] }}</th>
                 <th>{{ analysis[a]['department'] }}</th>
+                <th>{{ analysis[a]['contribution_rank'] }}</th>
                 <th>{{ analysis[a]['contribution_mail'] }}%({{ analysis[a]['mail_count'] }}件)</th>
                 <th>{{ analysis[a]['contribution_schedule'] }}%({{ analysis[a]['schedule_count'] }}件)</th>
                 <th>{{ analysis[a]['contribution_slack'] }}%({{ analysis[a]['slack_count'] }}件)</th>

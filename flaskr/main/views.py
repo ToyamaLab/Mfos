@@ -26,6 +26,10 @@ main_bp = Blueprint('main', __name__, template_folder='templates')
 
 @main_bp.route('/')
 def top_menu():
+    """
+        作成者: kazu
+        概要: トップ画面
+    """
     user_data = None
     while not user_data:
         print("while")
@@ -60,7 +64,10 @@ def top_menu():
 
 @main_bp.route('/user')
 def user_detail():
-    # try:
+    """
+        作成者: kazu
+        概要: 従業員情報を表示する画面
+    """
     user_id = request.args.get('id')
     status = 0
     while status == 0:
@@ -97,8 +104,19 @@ def user_detail():
 
 @main_bp.route('/project')
 def project_detail():
-    # try:
+    """
+        作成者: kazu
+        概要: 各プロジェクト毎の情報を表示する画面
+    """
     project_name = request.args.get('name')
+    return project_detail_load(project_name)
+
+
+def project_detail_load(project_name):
+    """
+        作成者: kazu
+        概要: 各プロジェクト毎の情報を表示する関数
+    """
     status = 0
     while status == 0:
         try:
@@ -142,68 +160,9 @@ def project_detail():
         if total_zoom_count != 0:
             analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
 
-    data = {}
-    data['names'] = names
-    data['gmail_data'] = gmail_data
-    data['schedule_data'] = schedule_data
-
-    names_str = str(names)[1:-1].replace("'", "")
-
-    return render_template(
-        'main/project_detail.html',
-        project_name=project_name,
-        analysis=analysis,
-        data=data,
-        names_str=names_str
-    )
-
-
-def project_detail_reload(name):
-    project_name = name
-    status = 0
-    while status == 0:
-        try:
-            analysis = project_analysis.analytics(project_name)
-            status = 1
-        except Exception:
-            continue
-
-    names = []
-    names_str = ""
-    gmail_data = []
-    schedule_data = []
-
-    total_mail_count = 0
-    total_schedule_count = 0
-    total_slack_count = 0
-    total_zoom_count = 0
-
-    for i in analysis['user_id']:
-        information = Information.select_information(i)
-        names_updated = []
-        names.append(information['name'])
-        gmail_data.append(analysis[i]['mail_count'])
-        schedule_data.append(analysis[i]['schedule_count'])
-        total_mail_count += analysis[i]['mail_count']
-        total_schedule_count += analysis[i]['schedule_count']
-        total_slack_count += analysis[i]['slack_count']
-        total_zoom_count += analysis[i]['zoom_count']
-
-    for i in analysis['user_id']:
-        analysis[i]['contribution_mail'] = 0
-        analysis[i]['contribution_schedule'] = 0
-        analysis[i]['contribution_slack'] = 0
-        analysis[i]['contribution_zoom'] = 0
-        if total_mail_count != 0:
-            analysis[i]['contribution_mail'] = '{:.1f}'.format((analysis[i]['mail_count']/total_mail_count)*100)
-        if total_schedule_count != 0:
-            analysis[i]['contribution_schedule'] = '{:.1f}'.format((analysis[i]['schedule_count'] / total_schedule_count) * 100)
-        if total_slack_count != 0:
-            analysis[i]['contribution_slack'] = '{:.1f}'.format((analysis[i]['slack_count'] / total_slack_count) * 100)
-        if total_zoom_count != 0:
-            analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
-
-    importance = Importance.select_importance(Project.select_project_by_name(project_name)[0])
+    project_id = Project.select_project_by_name(project_name)[0]
+    importance = Importance.select_importance(project_id)
+    analysis = project_analysis.project_contribution(project_id, analysis)
 
     data = {}
     data['names'] = names
@@ -224,6 +183,10 @@ def project_detail_reload(name):
 
 @main_bp.route('/project', methods=['POST'])
 def project_importance_update():
+    """
+        作成者: kazu
+        概要: 各プロジェクト毎に設定する各ウェブアプリケーションの重要度をフォームから更新する関数
+    """
     project_name = request.args.get('name')
     values = {
         'project_id': Project.select_project_by_name(project_name)[0],
@@ -235,5 +198,8 @@ def project_importance_update():
         }
     }
     Importance.update_importance(values)
-    project_detail_reload()
+    return project_detail_load(project_name)
+
+
+
 
