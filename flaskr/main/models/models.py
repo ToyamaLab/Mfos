@@ -24,7 +24,7 @@ class User(db.Model):
     slack_message = db.relationship('SlackMessage', backref='user', lazy=True)
     zoom_access_token = db.relationship('ZoomAccessToken', backref='user', lazy=True)
     zoom_meeting = db.relationship('ZoomMeeting', backref='user', lazy=True)
-    # zoom_participant = db.relationship('ZoomParticipant', backref='user', lazy=True)
+    zoom_participant = db.relationship('ZoomParticipant', backref='user', lazy=True)
 
     def __init__(self, slack_id, gmail, created_at, updated_at):
         self.slack_id = slack_id
@@ -86,6 +86,10 @@ class User(db.Model):
 
 
 class Project(db.Model):
+    """
+        作成者: kazu
+        概要: コミュニティ内で運用されているプロジェクト名を保存しているテーブル
+    """
     __tablename__ = 'projects'
     __table_args__ = (
         CheckConstraint('updated_at >= created_at'),  # チェック制約
@@ -94,6 +98,7 @@ class Project(db.Model):
     name = db.Column(db.String(50), index=True, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+    importance = db.relationship('Importance', backref='projects', lazy=True)
 
     def __init__(self, name, created_at, updated_at):
         self.name = name
@@ -108,11 +113,77 @@ class Project(db.Model):
         raw_data = db.session.query(cls).with_entities(cls.id, cls.name).all()
         result_data = []
         for r in raw_data:
-            data = {}
-            data['id'] = r[0]
-            data['name'] = r[1]
+            data = {'id': r[0], 'name': r[1]}
             result_data.append(data)
         return result_data
+
+    @classmethod
+    def select_project_by_name(cls, name):
+        data = db.session.query(cls).with_entities(cls.id).filter(cls.name == name).first()
+        return data
+
+
+class Importance(db.Model):
+    """
+        作成者: kazu
+        概要: 各プロジェクトごとに設定された各Webアプリケーションの重要度を保存するテーブル
+    """
+    __tablename__ = 'projects_importance'
+    __table_args__ = (
+        CheckConstraint('updated_at >= created_at'),  # チェック制約
+    )
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    service = db.Column(db.String(50), nullable=False)
+    importance = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+    def __init__(self, project_id, service, importance, created_at, updated_at):
+        self.project_id = project_id
+        self.service = service
+        self.importance = importance
+        self.created_at = created_at
+        self.updated_at = updated_at
+
+    def __str__(self):
+        return f"id = {self.id}, project_id = {self.project_id}, service = {self.service}, importance = {self.importance}, create_at={self.created_at}, update_at={self.updated_at} "
+
+    @classmethod
+    def select_importance(cls, project_id):
+        data = db.session.query(cls).with_entities(cls.service, cls.importance).filter(cls.project_id == project_id).all()
+        result_data = {}
+        for d in data:
+            result_data[d[0]] = d[1]
+        return result_data
+
+    @classmethod
+    def update_importance(cls, values):
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'mail').first()
+        target.importance = values['importance']['mail']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'schedule').first()
+        target.importance = values['importance']['schedule']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'slack').first()
+        target.importance = values['importance']['slack']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
+        target = db.session.query(cls).filter(cls.project_id == values['project_id']).filter(
+            cls.service == 'zoom').first()
+        target.importance = values['importance']['zoom']
+        target.updated_at = datetime.now()
+        db.session.add(target)
+
+        db.session.commit()
 
 
 class Information(db.Model):
@@ -721,37 +792,37 @@ class ZoomMeeting(db.Model):
                                                    cls.meeting_created).filter(cls.user_id == user_id).all()
 
 
-# class ZoomParticipant(db.Model):
-#     __tablename__ = 'zoom_participants'
-#     __table_args__ = (
-#         CheckConstraint('updated_at >= created_at'),
-#         UniqueConstraint('zoom_user_id', 'meeting_id'),
-#     )
-#     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
-#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-#     meeting_id = db.Column(db.Integer, db.ForeignKey('zoom_meetings.id'), unique=True)
-#     zoom_user_id = db.Column(db.String(50), nullable=False)
-#     zoom_name = db.Column(db.String(50), nullable=False)
-#     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
-#     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
-#
-#     def __init__(self, user_id, meeting_id, zoom_user_id, zoom_name, created_at, updated_at):
-#         self.user_id = user_id
-#         self.meeting_id = meeting_id
-#         self.zoom_user_id = zoom_user_id
-#         self.zoom_name = zoom_name
-#         self.created_at = created_at
-#         self.updated_at = updated_at
-#
-#     def __str__(self):
-#         return f"id = {self.id}, user_id = {self.user_id}, meeting_id = {self.meeting_id}, zoom_user_id = {self.zoom_user_id}, zoom_name = {self.zoom_name} create_at={self.created_at}, update_at={self.updated_at} "
-#
-#     @classmethod
-#     def insert_participant(cls, user_id, meeting_id, participant):
-#         target = ZoomMeeting(user_id=user_id, meeting_id=meeting_id, zoom_user_id=participant['id'],
-#                              zoom_name=participant['name'], created_at=datetime.now(), updated_at=datetime.now())
-#         db.session.add(target)
-#         db.session.commit()
+class ZoomParticipant(db.Model):
+    __tablename__ = 'zoom_participants'
+    __table_args__ = (
+        CheckConstraint('updated_at >= created_at'),
+        UniqueConstraint('zoom_user_id', 'meeting_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主キー
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    meeting_id = db.Column(db.Integer, db.ForeignKey('zoom_meetings.id'), unique=True)
+    zoom_user_id = db.Column(db.String(50), nullable=False)
+    zoom_name = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+    def __init__(self, user_id, meeting_id, zoom_user_id, zoom_name, created_at, updated_at):
+        self.user_id = user_id
+        self.meeting_id = meeting_id
+        self.zoom_user_id = zoom_user_id
+        self.zoom_name = zoom_name
+        self.created_at = created_at
+        self.updated_at = updated_at
+
+    def __str__(self):
+        return f"id = {self.id}, user_id = {self.user_id}, meeting_id = {self.meeting_id}, zoom_user_id = {self.zoom_user_id}, zoom_name = {self.zoom_name} create_at={self.created_at}, update_at={self.updated_at} "
+
+    @classmethod
+    def insert_participant(cls, user_id, meeting_id, participant):
+        target = ZoomMeeting(user_id=user_id, meeting_id=meeting_id, zoom_user_id=participant['id'],
+                             zoom_name=participant['name'], created_at=datetime.now(), updated_at=datetime.now())
+        db.session.add(target)
+        db.session.commit()
         # db_cur.execute(
         #     "INSERT INTO zoom_meetings(user_id, meeting_id, zoom_user_id, zoom_name, created_at, updated_at) VALUES(%s, %s, %s, %s, %s, %s)",
         #     (user_id, meeting_id, participant['id'], participant['name'], datetime.now(), datetime.now()))

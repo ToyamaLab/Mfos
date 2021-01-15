@@ -1,3 +1,4 @@
+import numpy as np
 from flaskr.database import db
 from flaskr.main.models import (
     User,
@@ -7,7 +8,8 @@ from flaskr.main.models import (
     SlackChannelMember,
     SlackChannel,
     SlackMessage,
-    ZoomMeeting
+    ZoomMeeting,
+    Importance
 )
 
 
@@ -19,8 +21,10 @@ def search_word(target, query):
 
 
 def analytics(project_name):
-    # 貢献度
-    # 対象になるuserのID一覧を取得
+    """
+        作成者: kazu
+        概要: 各ユーザーのプロジェクト貢献度を計算する元となるデータを取得・処理する
+    """
     users = db.session.query(User, Information).join(Information, User.id == Information.user_id).with_entities(
         User.id, User.gmail, User.slack_id, Information.name, Information.department).all()
     user_data = {}
@@ -88,5 +92,33 @@ def analytics(project_name):
     return user_data
 
 
+
+def project_contribution(project_id, analysis):
+    """
+        作成者: kazu
+        概要: 各ユーザーのデータと, プロジェクトごとに設定されている重要度から各プロジェクトの貢献ランクを提示する関数
+    """
+    rank_data = []
+    importance = Importance.select_importance(project_id)
+    total_importance = importance['mail'] + importance['schedule'] + importance['slack'] + importance['zoom']
+    for i in analysis['user_id']:
+        analysis[i]['contribution_result'] = (importance['mail']/total_importance)*(float(analysis[i]['contribution_mail'])/100) + (importance['schedule'] / total_importance) * (float(analysis[i]['contribution_schedule']) / 100) + (importance['slack']/total_importance)*(float(analysis[i]['contribution_slack'])/100) + (importance['zoom']/total_importance)*(float(analysis[i]['contribution_zoom'])/100)
+        rank_data.append(analysis[i]['contribution_result'])
+
+    q25, q50, q75 = np.percentile(rank_data, [25, 50, 75])
+
+    for i in analysis['user_id']:
+        if analysis[i]['contribution_result'] == 0:
+            analysis[i]['contribution_rank'] = "Z"
+        elif analysis[i]['contribution_result'] < q25:
+            analysis[i]['contribution_rank'] = "D"
+        elif analysis[i]['contribution_result'] < q50:
+            analysis[i]['contribution_rank'] = "C"
+        elif analysis[i]['contribution_result'] < q75:
+            analysis[i]['contribution_rank'] = "B"
+        else:
+            analysis[i]['contribution_rank'] = "A"
+
+    return analysis
 
 

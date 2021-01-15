@@ -16,6 +16,10 @@ google_credentials = google_account_management(GOOGLE_CALENDAR_SCOPES)
 
 
 def initialize_calendar():
+    """
+        作成者: kazu
+        概要: Google Calendar APIの認証を行う関数
+    """
     credentials = google_credentials
     return build('calendar', 'v3', credentials=credentials, cache_discovery=False)
 
@@ -24,7 +28,7 @@ def initialize_calendar():
 def regist_calendar():
     """
         作成者: kazu
-        概要: Google Calendarの情報を保存するメソッド
+        概要: Google Calendarの情報を保存する関数
         基本的な考え方:
             Google Calendar APIを利用し, 現在時刻より30日間の予定を取得.
             データベース内のデータと照合し, 新規保存や更新などを行う.

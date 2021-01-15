@@ -7,6 +7,10 @@ KEY_FILE_LOCATION = 'credentials.json'
 KEY_FILE_LOCATION2 = 'credentials_gmail.json'
 
 def zoom_account_management():
+    """
+        作成者: kazu
+        概要: Zoom APIへの接続・認証を行う関数
+    """
     zoom_user_id = os.getenv('ZOOM_USER_ID')
     zoom_client_id = os.getenv('ZOOM_CLIENT_ID')
     zoom_client_secret = os.getenv('ZOOM_CLIENT_SECRET')
@@ -26,6 +30,10 @@ def zoom_account_management():
 
 
 def google_account_management(scope):
+    """
+        作成者: kazu
+        概要: Google APIへの接続・認証を行う関数
+    """
     try:
         google_key = json.loads(os.getenv('GOOGLE_KEYFILE'))
         credentials = ServiceAccountCredentials.from_json_keyfile_dict(google_key, scope)
@@ -36,6 +44,10 @@ def google_account_management(scope):
 
 
 def gmail_account_management(scope):
+    """
+        作成者: kazu
+        概要: Gmail APIへの接続・認証を行う関数
+    """
     try:
         gmail_key = json.loads(os.getenv('GMAIL_KEYFILE'))
         flow = InstalledAppFlow.from_client_config(gmail_key, scope)

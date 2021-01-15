@@ -17,6 +17,8 @@ oauth2client = "*"
 apiclient = "*"
 google-api-python-client = "*"
 google-auth-oauthlib = "*"
+pandas = "*"
+numpy = "*"
 
 [requires]
 python_version = "3.8"

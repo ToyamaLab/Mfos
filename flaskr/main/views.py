@@ -17,7 +17,8 @@ from flaskr.main.models import (
     SlackChannel,
     SlackMessage,
     ZoomMeeting,
-    Project
+    Project,
+    Importance
 )
 
 main_bp = Blueprint('main', __name__, template_folder='templates')
@@ -25,6 +26,10 @@ main_bp = Blueprint('main', __name__, template_folder='templates')
 
 @main_bp.route('/')
 def top_menu():
+    """
+        作成者: kazu
+        概要: トップ画面
+    """
     user_data = None
     while not user_data:
         print("while")
@@ -59,7 +64,10 @@ def top_menu():
 
 @main_bp.route('/user')
 def user_detail():
-    # try:
+    """
+        作成者: kazu
+        概要: 従業員情報を表示する画面
+    """
     user_id = request.args.get('id')
     status = 0
     while status == 0:
@@ -96,8 +104,19 @@ def user_detail():
 
 @main_bp.route('/project')
 def project_detail():
-    # try:
+    """
+        作成者: kazu
+        概要: 各プロジェクト毎の情報を表示する画面
+    """
     project_name = request.args.get('name')
+    return project_detail_load(project_name)
+
+
+def project_detail_load(project_name):
+    """
+        作成者: kazu
+        概要: 各プロジェクト毎の情報を表示する関数
+    """
     status = 0
     while status == 0:
         try:
@@ -138,8 +157,12 @@ def project_detail():
             analysis[i]['contribution_schedule'] = '{:.1f}'.format((analysis[i]['schedule_count'] / total_schedule_count) * 100)
         if total_slack_count != 0:
             analysis[i]['contribution_slack'] = '{:.1f}'.format((analysis[i]['slack_count'] / total_slack_count) * 100)
-        if total_zoom_count !=0:
+        if total_zoom_count != 0:
             analysis[i]['contribution_zoom'] = '{:.1f}'.format((analysis[i]['zoom_count'] / total_zoom_count) * 100)
+
+    project_id = Project.select_project_by_name(project_name)[0]
+    importance = Importance.select_importance(project_id)
+    analysis = project_analysis.project_contribution(project_id, analysis)
 
     data = {}
     data['names'] = names
@@ -153,5 +176,30 @@ def project_detail():
         project_name=project_name,
         analysis=analysis,
         data=data,
-        names_str=names_str
+        names_str=names_str,
+        importance=importance
     )
+
+
+@main_bp.route('/project', methods=['POST'])
+def project_importance_update():
+    """
+        作成者: kazu
+        概要: 各プロジェクト毎に設定する各ウェブアプリケーションの重要度をフォームから更新する関数
+    """
+    project_name = request.args.get('name')
+    values = {
+        'project_id': Project.select_project_by_name(project_name)[0],
+        'importance': {
+            'mail': request.form.get('mail'),
+            'schedule': request.form.get('schedule'),
+            'slack': request.form.get('slack'),
+            'zoom': request.form.get('zoom')
+        }
+    }
+    Importance.update_importance(values)
+    return project_detail_load(project_name)
+
+
+
+
