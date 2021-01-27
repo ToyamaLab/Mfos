@@ -14,7 +14,7 @@ def run_all_api():
     """
     member_result = member.regist_information_spreadsheet()
     calendar_result = calendar.regist_calendar()
-    gmail_result = gmail.regist_gmail()
+    # gmail_result = gmail.regist_gmail()
     zoom_result = zoom.regist_meetings()
     return {
         'status': 200,
