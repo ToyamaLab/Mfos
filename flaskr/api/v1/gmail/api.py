@@ -77,7 +77,7 @@ def regist_gmail():
                 date_str = date_data[3] + "-" + str(months[date_data[2]]) + "-" + date_data[1] + " " + date_data[4]
                 message_data['date'] = dt.strptime(date_str, '%Y-%m-%d %H:%M:%S')
             elif header['name'] == 'From':  # 送信者情報
-                print(header['value'])
+                print(re.findall('<.*>', header['value']))
                 message_data['sender_name'] = re.split('<', header['value'])[0]
                 message_data['sender_email'] = re.findall('<.*>', header['value'])[0].strip('<').strip('>')
             elif header['name'] == 'Subject':  # タイトル情報
