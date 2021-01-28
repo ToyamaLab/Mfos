@@ -3,6 +3,7 @@ import re
 import os
 import mysql.connector as mydb
 import pymysql
+import time
 from flask import Blueprint, render_template, request
 from flaskr.database import db
 from flaskr.main.functions import project_analysis
@@ -41,6 +42,7 @@ def top_menu():
             break
         except Exception:
             print('リロード')
+            time.sleep(5)
             continue
 
     users = []
@@ -88,6 +90,7 @@ def user_detail():
             zoom_meeting = ZoomMeeting.select_meeting(user_id)
             status = 1
         except Exception:
+            time.sleep(5)
             continue
 
 
@@ -123,6 +126,7 @@ def project_detail_load(project_name):
             analysis = project_analysis.analytics(project_name)
             status = 1
         except Exception:
+            time.sleep(5)
             continue
 
     names = []

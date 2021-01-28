@@ -55,7 +55,7 @@ def regist_gmail():
     gmail = initialize_gmail()
     message_list = []
 
-    query = 'after:' + str(datetime.date.today() + datetime.timedelta(hours=-1)) + ' before:' + str(
+    query = 'after:' + str(datetime.date.today() + datetime.timedelta(hours=-2)) + ' before:' + str(
         datetime.date.today() + datetime.timedelta(days=1))
 
     message_id_list = gmail.users().messages().list(userId=GOOGLE_GMAIL_ID, maxResults=100, q=query).execute()
