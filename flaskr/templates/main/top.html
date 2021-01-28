@@ -16,7 +16,6 @@
             <th>NAME</th>
             <th>DEPARTMENT</th>
             <th>MAIL</th>
-            <th>SLACK_ID</th>
         </tr>
             {% for user in users %}
                 <tr>
@@ -24,7 +23,6 @@
                     <td>{{ user['name'] }}</td>
                     <td>{{ user['department'] }}</td>
                     <td>{{ user['mail'] }}</td>
-                    <td>{{ user['slack_id'] }}</td>
                     <td><button onclick="location.href='user?id={{ user['id'] }}'">詳細</button></td>
                 </tr>
             {% endfor %}
