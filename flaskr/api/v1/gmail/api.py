@@ -79,7 +79,11 @@ def regist_gmail():
             elif header['name'] == 'From':  # 送信者情報
                 print(re.findall('<.*>', header['value']))
                 message_data['sender_name'] = re.split('<', header['value'])[0]
-                message_data['sender_email'] = re.findall('<.*>', header['value'])[0].strip('<').strip('>')
+                print(message_data['sender_name'])
+                if re.findall('<.*>', header['value']):
+                    message_data['sender_email'] = re.findall('<.*>', header['value'])[0].strip('<').strip('>')
+                else:
+                    message_data['sender_email'] = None
             elif header['name'] == 'Subject':  # タイトル情報
                 message_data['subject'] = header['value']
         if 'snippet' in MessageDetail:  # 本文

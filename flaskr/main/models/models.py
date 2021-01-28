@@ -270,7 +270,7 @@ class Mail(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     message_id = db.Column(db.String(50), nullable=False, unique=True)
     sender_name = db.Column(db.String(50), nullable=False)
-    sender_email = db.Column(db.String(50), nullable=False)
+    sender_email = db.Column(db.String(50))
     date = db.Column(db.DateTime, nullable=False)
     subject = db.Column(db.String(100))
     message = db.Column(db.String(2000))
